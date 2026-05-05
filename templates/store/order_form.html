@@ -1,0 +1,102 @@
+{% extends "store/base.html" %}
+
+{% block title %}Order {{ product.name }} | Delhi Stationery{% endblock %}
+
+{% block content %}
+
+<section class="page-banner">
+    <div class="container">
+        <h1>Place Your Order</h1>
+        <p>Fast delivery available across Delhi NCR.</p>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="order-grid">
+
+        <!-- Product Summary Card -->
+        <div class="order-product-card">
+            <div class="product-img-box" style="height:220px;border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="no-img">No Image</div>
+                {% endif %}
+            </div>
+
+            <span class="product-category" style="font-size:.72rem">{{ product.category.name }}</span>
+            <h2>{{ product.name }}</h2>
+            <p>{{ product.description|truncatewords:20 }}</p>
+
+            <div class="price-row large" style="margin:16px 0 10px">
+                <strong>₹{{ product.final_price }}</strong>
+                {% if product.discount_price %}<del>₹{{ product.price }}</del>{% endif %}
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;font-size:.875rem;color:#666;padding:10px 0;border-top:1px solid var(--cream)">
+                <span>📦</span>
+                <span><strong>{{ product.stock }}</strong> units in stock</span>
+            </div>
+
+            <div style="background:var(--teal-lt);border:1.5px solid rgba(26,107,107,.2);border-radius:var(--radius-sm);padding:14px 16px;margin-top:16px;font-size:.83rem;color:var(--teal-dk)">
+                <strong>✅ Order Confirmation</strong><br>
+                Our team will call you within 2 hours to confirm the order and delivery time.
+            </div>
+        </div>
+
+        <!-- Order Form -->
+        <div class="form-card">
+            <h2>Customer Details</h2>
+
+            <form method="post" id="orderForm">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<small class="error">{{ form.name.errors.0 }}</small>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}<small class="error">{{ form.phone.errors.0 }}</small>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Delhi Delivery Address</label>
+                    {{ form.address }}
+                    {% if form.address.errors %}<small class="error">{{ form.address.errors.0 }}</small>{% endif %}
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}<small class="error">{{ form.quantity.errors.0 }}</small>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        {{ form.payment_method }}
+                        {% if form.payment_method.errors %}<small class="error">{{ form.payment_method.errors.0 }}</small>{% endif %}
+                    </div>
+                </div>
+
+                <div class="summary-box">
+                    <p><span>Product Price</span> <strong>₹{{ product.final_price }}</strong></p>
+                    <p><span>Delivery Area</span> <strong>Delhi NCR</strong></p>
+                    <p><span>Payment Options</span> <strong>COD / UPI</strong></p>
+                    <p style="border-top:1px dashed rgba(232,132,26,.3);margin-top:8px;padding-top:8px"><span style="font-weight:700;color:var(--ink)">Note</span> <span style="font-size:.8rem;color:#888">Delivery charges may apply</span></p>
+                </div>
+
+                <button type="submit" class="btn primary-btn full-btn" style="font-size:1rem;padding:14px">
+                    🛒 Place Order
+                </button>
+            </form>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

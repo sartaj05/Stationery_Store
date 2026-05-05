@@ -1,0 +1,32 @@
+<div class="product-card">
+    <div class="product-image">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% else %}
+            <div class="no-image">No Image</div>
+        {% endif %}
+
+        {% if product.discount_price %}
+            <span class="discount-badge">Sale</span>
+        {% endif %}
+    </div>
+
+    <div class="product-body">
+        <p class="product-category">{{ product.category.name }}</p>
+        <h3>{{ product.name }}</h3>
+        <p class="brand">{{ product.brand|default:"Delhi Stationery" }}</p>
+
+        <div class="price-row">
+            <strong>₹{{ product.final_price }}</strong>
+            {% if product.discount_price %}
+                <span>₹{{ product.price }}</span>
+            {% endif %}
+        </div>
+
+        <p class="stock {{ product.stock_status|slugify }}">
+            {{ product.stock_status }}
+        </p>
+
+        <a href="{% url 'product_detail' product.id %}" class="card-btn">View Details</a>
+    </div>
+</div>

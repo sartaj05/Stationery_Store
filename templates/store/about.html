@@ -1,0 +1,78 @@
+{% extends "store/base.html" %}
+
+{% block title %}About | Delhi Stationery{% endblock %}
+
+{% block content %}
+
+<section class="page-banner">
+    <div class="container">
+        <h1>About Delhi Stationery</h1>
+        <p>Your trusted stationery partner in Delhi since 2020.</p>
+    </div>
+</section>
+
+<section class="container section about-box">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-bottom:64px">
+        <div>
+            <h2>Who We Are</h2>
+            <p>
+                Delhi Stationery is a local product-based online stationery store for
+                books, copies, pens, school items, office supplies and exam materials.
+                We bring quality stationery products directly to your doorstep in Delhi.
+            </p>
+            <p>
+                We serve students, parents, schools, coaching institutes, small offices
+                and bulk stationery buyers across Delhi with fast, reliable delivery.
+            </p>
+            <div style="display:flex;gap:32px;margin-top:28px">
+                <div>
+                    <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--saffron)">500+</div>
+                    <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em">Products</div>
+                </div>
+                <div>
+                    <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--teal)">Delhi</div>
+                    <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em">Coverage</div>
+                </div>
+                <div>
+                    <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--jade)">COD</div>
+                    <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em">Available</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background:var(--paper-dark);border-radius:var(--radius-lg);padding:40px;text-align:center;border:2px solid var(--cream)">
+            <div style="font-size:5rem;margin-bottom:16px">📚</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--ink);margin-bottom:8px">Delhi's Stationery Store</h3>
+            <p style="color:#888;font-size:.9rem;line-height:1.6">Books • Copies • Pens • Office Supplies<br>School Materials • Exam Stationery</p>
+        </div>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h3>📚 Books & Notebooks</h3>
+            <p>School books, notebooks, registers, composition books and study materials for all grades.</p>
+        </div>
+        <div class="feature-card">
+            <h3>✏️ Pens & Writing</h3>
+            <p>Ball pens, gel pens, pencils, markers, highlighters and all writing instruments.</p>
+        </div>
+        <div class="feature-card">
+            <h3>📐 School Supplies</h3>
+            <p>Geometry boxes, rulers, erasers, sharpeners, colour pencils and art supplies.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🗂️ Office Stationery</h3>
+            <p>Files, folders, staplers, tape, sticky notes, calculators and office essentials.</p>
+        </div>
+        <div class="feature-card">
+            <h3>📝 Exam Materials</h3>
+            <p>Answer sheets, exam pads, drawing sheets, graph papers and admit card holders.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🚚 Delhi Delivery</h3>
+            <p>Fast local delivery support inside Delhi. Same-day delivery available in select areas.</p>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

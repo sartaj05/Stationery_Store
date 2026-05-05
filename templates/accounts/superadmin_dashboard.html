@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Superadmin Dashboard | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}" class="active">📊 Dashboard</a>
+            <a href="/admin/store/product/">📦 Manage Products</a>
+            <a href="/admin/store/category/">🗂️ Manage Categories</a>
+            <a href="/admin/store/order/">🛒 Manage Orders</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="/admin/">⚙️ Django Admin</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Welcome back, <strong>{{ request.user.username }}</strong> 👋</p>
+            </div>
+            <a href="/admin/" class="admin-link">⚙️ Django Admin</a>
+        </header>
+
+        <!-- Stats -->
+        <section class="stats-grid">
+            <div class="stat-card blue">
+                <h3>Total Products</h3>
+                <h2>{{ total_products }}</h2>
+            </div>
+            <div class="stat-card green">
+                <h3>Active Products</h3>
+                <h2>{{ active_products }}</h2>
+            </div>
+            <div class="stat-card purple">
+                <h3>Categories</h3>
+                <h2>{{ total_categories }}</h2>
+            </div>
+            <div class="stat-card orange">
+                <h3>Total Orders</h3>
+                <h2>{{ total_orders }}</h2>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <div style="padding:20px 32px 0;display:flex;gap:12px;flex-wrap:wrap">
+            <a href="/admin/store/product/add/" style="display:inline-flex;align-items:center;gap:8px;background:var(--saffron);color:var(--ink);padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:700;text-decoration:none;transition:.2s ease">
+                ➕ Add Product
+            </a>
+            <a href="/admin/store/category/add/" style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:700;text-decoration:none;transition:.2s ease">
+                ➕ Add Category
+            </a>
+            <a href="/admin/store/order/" style="display:inline-flex;align-items:center;gap:8px;background:var(--paper-dk);color:var(--ink);border:1.5px solid var(--cream);padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:600;text-decoration:none;transition:.2s ease">
+                📋 View All Orders
+            </a>
+        </div>
+
+        <!-- Content -->
+        <section class="content-grid">
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>Latest Orders</h2>
+                    <a href="/admin/store/order/">View All →</a>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Payment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in latest_orders %}
+                            <tr>
+                                <td><strong>{{ order.name }}</strong><br><span style="font-size:.75rem;color:#aaa">{{ order.phone }}</span></td>
+                                <td>{{ order.product.name }}</td>
+                                <td>
+                                    <span style="background:var(--paper-dk);padding:3px 10px;border-radius:50px;font-size:.8rem;font-weight:600">
+                                        {{ order.quantity }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="background:{% if order.payment_method == 'COD' %}rgba(26,107,107,.1);color:var(--teal){% else %}rgba(232,132,26,.1);color:var(--saffron-dk){% endif %};padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:700">
+                                        {{ order.payment_method }}
+                                    </span>
+                                </td>
+                                <td style="color:#aaa;font-size:.8rem">{{ order.created_at|date:"d M Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:#aaa;padding:32px">
+                                    No orders yet. 📦
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>⚠️ Low Stock</h2>
+                    <a href="/admin/store/product/">Manage →</a>
+                </div>
+                <div class="low-stock-list">
+                    {% for product in low_stock_products %}
+                    <div class="stock-item">
+                        <div>
+                            <h4>{{ product.name }}</h4>
+                            <p>{{ product.category.name }}</p>
+                        </div>
+                        <span>{{ product.stock }} left</span>
+                    </div>
+                    {% empty %}
+                    <div style="padding:32px 24px;text-align:center;color:#aaa">
+                        ✅ All products have sufficient stock.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

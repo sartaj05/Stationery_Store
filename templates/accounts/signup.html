@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Signup | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+</head>
+<body>
+
+<div class="auth-page">
+    <div class="auth-left signup-left">
+        <div class="brand-box">
+            <h1>📚 Delhi Stationery</h1>
+            <p>Create your customer account</p>
+        </div>
+        <div class="auth-text">
+            <h2>Start Shopping Today!</h2>
+            <p>Buy books, notebooks, pens and stationery items with easy online ordering and Delhi delivery.</p>
+        </div>
+
+        <div style="margin-top:48px;display:flex;flex-direction:column;gap:14px;position:relative">
+            <div style="display:flex;align-items:center;gap:12px;color:rgba(253,248,240,.5);font-size:.83rem">
+                <span style="font-size:1.2rem">📦</span> Easy order tracking
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:rgba(253,248,240,.5);font-size:.83rem">
+                <span style="font-size:1.2rem">💬</span> WhatsApp order support
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:rgba(253,248,240,.5);font-size:.83rem">
+                <span style="font-size:1.2rem">🎓</span> Student & school discounts
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Signup as a customer — it's free!</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="msg {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="full_name" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" placeholder="Create a unique username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label>Email (Optional)</label>
+                    <input type="email" name="email" placeholder="Enter email address" autocomplete="email">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" name="password" placeholder="Create password" required autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm *</label>
+                        <input type="password" name="confirm_password" placeholder="Repeat password" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-btn">Create My Account</button>
+            </form>
+
+            <p class="bottom-text" style="margin-top:24px">
+                Already have an account?
+                <a href="{% url 'login' %}">Login here</a>
+            </p>
+            <p class="bottom-text">
+                <a href="{% url 'home' %}" style="color:#aaa">← Back to Home</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

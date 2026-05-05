@@ -1,0 +1,33 @@
+{% extends "store/base.html" %}
+
+{% block title %}Order Success | Delhi Stationery{% endblock %}
+
+{% block content %}
+
+<section class="success-section">
+    <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <h1>Order Placed Successfully!</h1>
+        <p>
+            Thank you for ordering from Delhi Stationery.
+            Our team will contact you within 2 hours for order confirmation and delivery details.
+        </p>
+
+        <div style="background:var(--teal-lt);border:1.5px solid rgba(26,107,107,.2);border-radius:var(--radius-sm);padding:16px 20px;margin:20px 0;text-align:left;font-size:.875rem;color:var(--teal-dk)">
+            <strong>📞 What happens next?</strong>
+            <ul style="margin-top:8px;list-style:none;display:flex;flex-direction:column;gap:6px">
+                <li>✅ Order received and recorded</li>
+                <li>📞 Our team will call to confirm delivery time</li>
+                <li>🚚 Product will be dispatched from Delhi store</li>
+                <li>💰 Payment collected on delivery (COD)</li>
+            </ul>
+        </div>
+
+        <div class="success-actions">
+            <a href="{% url 'product_list' %}" class="btn primary-btn">🛒 Continue Shopping</a>
+            <a href="{% url 'home' %}" class="btn outline-btn">← Go Home</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

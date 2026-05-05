@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+db.sqlite3
+media/
+
+# Static files (optional if you collectstatic)
+staticfiles/
+
+# Environment variables
+.env
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Migrations (optional - be careful)
+**/migrations/*
+!**/migrations/__init__.py
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Node (if using frontend)
+node_modules/
