@@ -1,0 +1,520 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Orders | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .toolbar {
+            padding: 22px 32px 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-left h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.35rem;
+            margin-bottom: 4px;
+        }
+
+        .toolbar-left p {
+            color: #999;
+            font-size: .85rem;
+        }
+
+        .filter-panel {
+            margin: 20px 32px 0;
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: 1.7fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #999;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            outline: none;
+            font-size: .88rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 10px 18px;
+            font-size: .82rem;
+            font-weight: 700;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .table-section {
+            padding: 24px 32px 32px;
+        }
+
+        .order-main strong {
+            display: block;
+            font-size: .9rem;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .order-main span {
+            display: block;
+            color: #999;
+            font-size: .76rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge.pending {
+            background: rgba(212,160,23,.14);
+            color: #a87900;
+        }
+
+        .badge.confirmed {
+            background: rgba(26,107,107,.12);
+            color: var(--teal);
+        }
+
+        .badge.packed {
+            background: rgba(142,68,173,.12);
+            color: #8e44ad;
+        }
+
+        .badge.out-for-delivery {
+            background: rgba(41,128,185,.12);
+            color: #2980b9;
+        }
+
+        .badge.delivered {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .badge.cancelled {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .badge.cod {
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .badge.upi {
+            background: rgba(232,132,26,.12);
+            color: var(--saffron);
+        }
+
+        .price-text {
+            font-family: 'DM Mono', monospace;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .mini-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 12px;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            font-size: .74rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .mini-btn.view {
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .mini-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 14px;
+        }
+
+        .empty-state h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.25rem;
+            margin-bottom: 6px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: 50px;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            color: var(--ink);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .82rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .pagination .current {
+            background: var(--saffron);
+            border-color: var(--saffron);
+            color: var(--ink);
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        @media (max-width: 1000px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .toolbar,
+            .filter-panel,
+            .table-section,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .filter-panel {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+
+            .filter-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}" class="active">🛒 Orders</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Orders</h1>
+                <p>View and manage customer orders from your custom dashboard.</p>
+            </div>
+
+            <a href="{% url 'superadmin_dashboard' %}" class="admin-link">
+                📊 Dashboard
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <h2>Order Management</h2>
+                <p>Search orders, filter by status and open order details.</p>
+            </div>
+        </section>
+
+        <section class="filter-panel">
+            <form method="get" class="filter-form">
+
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ query|default:'' }}"
+                        class="form-control"
+                        placeholder="Search customer name, phone or product..."
+                    >
+                </div>
+
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="action-btn primary">
+                    🔍 Search
+                </button>
+
+                <a href="{% url 'superadmin_order_list' %}" class="action-btn light">
+                    Reset
+                </a>
+
+            </form>
+        </section>
+
+        <section class="table-section">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>All Orders</h2>
+                    <a href="{% url 'superadmin_dashboard' %}">Back to Dashboard →</a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th style="text-align:right">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for order in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="order-main">
+                                        <strong>{{ order.name }}</strong>
+                                        <span>📞 {{ order.phone }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="order-main">
+                                        <strong>{{ order.product.name }}</strong>
+                                        <span>{{ order.product.category.name }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge confirmed">{{ order.quantity }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="price-text">₹{{ order.total_price }}</span>
+                                </td>
+
+                                <td>
+                                    {% if order.payment_method == "COD" %}
+                                        <span class="badge cod">COD</span>
+                                    {% else %}
+                                        <span class="badge upi">UPI</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if order.status == "PENDING" %}
+                                        <span class="badge pending">Pending</span>
+                                    {% elif order.status == "CONFIRMED" %}
+                                        <span class="badge confirmed">Confirmed</span>
+                                    {% elif order.status == "PACKED" %}
+                                        <span class="badge packed">Packed</span>
+                                    {% elif order.status == "OUT_FOR_DELIVERY" %}
+                                        <span class="badge out-for-delivery">Out for Delivery</span>
+                                    {% elif order.status == "DELIVERED" %}
+                                        <span class="badge delivered">Delivered</span>
+                                    {% elif order.status == "CANCELLED" %}
+                                        <span class="badge cancelled">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge pending">{{ order.status }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <td style="color:#999;font-size:.8rem">
+                                    {{ order.created_at|date:"d M Y, h:i A" }}
+                                </td>
+
+                                <td>
+                                    <div style="display:flex;justify-content:flex-end">
+                                        <a
+                                            href="{% url 'superadmin_order_detail' order.id %}"
+                                            class="mini-btn view"
+                                        >
+                                            👁️ View / Update
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <div class="icon">🛒</div>
+                                        <h3>No orders found</h3>
+                                        <p>No customer orders match your current filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                        First
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                        ‹
+                    </a>
+                {% endif %}
+
+                <span class="current">{{ page_obj.number }}</span>
+                <span>of {{ page_obj.paginator.num_pages }}</span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                        ›
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if status %}&status={{ status }}{% endif %}">
+                        Last
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>

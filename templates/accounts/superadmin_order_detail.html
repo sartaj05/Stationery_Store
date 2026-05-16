@@ -1,0 +1,431 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Detail | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .detail-wrap {
+            padding: 28px 32px 32px;
+            display: grid;
+            grid-template-columns: 1.4fr .9fr;
+            gap: 22px;
+        }
+
+        .detail-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .detail-card-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .detail-body {
+            padding: 22px 24px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .info-item {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: .68rem;
+            color: #999;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 5px;
+        }
+
+        .info-item strong,
+        .info-item span {
+            color: var(--ink);
+            font-size: .92rem;
+            line-height: 1.5;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .product-line {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .product-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .product-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--paper-dk);
+            font-size: .9rem;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-row span {
+            color: #888;
+        }
+
+        .summary-row strong {
+            color: var(--ink);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            outline: none;
+            font-size: .88rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #999;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 11px 20px;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        @media (max-width: 950px) {
+            .detail-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .detail-wrap,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}" class="active">🛒 Orders</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Order Detail</h1>
+                <p>Order from <strong>{{ order.name }}</strong></p>
+            </div>
+
+            <a href="{% url 'superadmin_order_list' %}" class="admin-link">
+                ← Back to Orders
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="detail-wrap">
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Customer & Order Information</h2>
+                    <span style="font-size:.8rem;color:#999">
+                        #{{ order.id }}
+                    </span>
+                </div>
+
+                <div class="detail-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Customer Name</label>
+                            <strong>{{ order.name }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Phone Number</label>
+                            <strong>{{ order.phone }}</strong>
+                        </div>
+
+                        <div class="info-item full">
+                            <label>Delivery Address</label>
+                            <span>{{ order.address }}</span>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Payment Method</label>
+                            <strong>{{ order.get_payment_method_display }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Current Status</label>
+                            <strong>{{ order.get_status_display }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Created At</label>
+                            <strong>{{ order.created_at|date:"d M Y, h:i A" }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Last Updated</label>
+                            <strong>{{ order.updated_at|date:"d M Y, h:i A" }}</strong>
+                        </div>
+
+                        {% if order.admin_note %}
+                        <div class="info-item full">
+                            <label>Admin Note</label>
+                            <span>{{ order.admin_note }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Update Order</h2>
+                </div>
+
+                <div class="detail-body">
+                    <form method="post" data-prevent-double-submit="true">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label>Status</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <small style="color:var(--ruby)">{{ form.status.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Admin Note</label>
+                            {{ form.admin_note }}
+                            {% if form.admin_note.errors %}
+                                <small style="color:var(--ruby)">{{ form.admin_note.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="action-btn primary" style="width:100%">
+                            💾 Update Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Product Ordered</h2>
+                </div>
+
+                <div class="detail-body">
+                    <div class="product-line">
+                        <div class="product-thumb">
+                            {% if order.product.image %}
+                                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+                            {% else %}
+                                📦
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <h3 style="font-family:'Playfair Display',serif;margin-bottom:4px;color:var(--ink)">
+                                {{ order.product.name }}
+                            </h3>
+                            <p style="color:#999;font-size:.84rem">
+                                {{ order.product.category.name }}
+                            </p>
+                            <p style="color:#999;font-size:.84rem;margin-top:4px">
+                                Stock Left: {{ order.product.stock }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Billing Summary</h2>
+                </div>
+
+                <div class="detail-body">
+                    <div class="summary-row">
+                        <span>Product Price</span>
+                        <strong>₹{{ order.product.final_price }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Quantity</span>
+                        <strong>{{ order.quantity }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Total Amount</span>
+                        <strong>₹{{ order.total_price }}</strong>
+                    </div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+                        <a href="{% url 'superadmin_order_list' %}" class="action-btn light">
+                            ← Back
+                        </a>
+
+                        <a href="{% url 'product_detail' order.product.id %}" target="_blank" class="action-btn primary">
+                            👁️ View Product
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>
