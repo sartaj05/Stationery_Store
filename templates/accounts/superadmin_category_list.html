@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Categories | Superadmin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .toolbar {
+            padding: 24px 32px 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-form input {
+            width: 280px;
+            padding: 11px 14px;
+            border: 1.5px solid var(--cream);
+            border-radius: 8px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            border-radius: 50px;
+            border: none;
+            text-decoration: none;
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .btn-secondary {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .btn-light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .btn-danger {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .pagination {
+            padding: 20px 24px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: .8rem;
+            text-decoration: none;
+            background: var(--paper-dk);
+            color: var(--ink);
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}" class="active">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Categories</h1>
+                <p>Manage product categories without touching Django Admin, finally.</p>
+            </div>
+            <a href="{% url 'superadmin_category_create' %}" class="admin-link">➕ Add Category</a>
+        </header>
+
+        {% if messages %}
+            <div style="padding:20px 32px 0">
+                {% for message in messages %}
+                    <div style="background:#fff;border-left:4px solid var(--teal);padding:12px 16px;border-radius:8px;margin-bottom:10px">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="toolbar">
+            <form method="get" class="search-form">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search category name or slug...">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{% url 'superadmin_category_list' %}" class="btn btn-light">Reset</a>
+            </form>
+
+            <a href="{% url 'superadmin_category_create' %}" class="btn btn-secondary">➕ Add Category</a>
+        </div>
+
+        <section style="padding:24px 32px">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>Category List</h2>
+                    <span style="font-size:.8rem;color:#aaa">Total: {{ page_obj.paginator.count }}</span>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Icon</th>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th style="width:180px">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for category in page_obj %}
+                                <tr>
+                                    <td style="font-size:1.3rem">{{ category.icon|default:"📦" }}</td>
+                                    <td><strong>{{ category.name }}</strong></td>
+                                    <td style="color:#888">{{ category.slug }}</td>
+                                    <td>
+                                        <div style="display:flex;gap:8px">
+                                            <a href="{% url 'superadmin_category_update' category.id %}" class="btn btn-light">Edit</a>
+                                            <a href="{% url 'superadmin_category_delete' category.id %}" class="btn btn-danger">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align:center;color:#aaa;padding:36px">
+                                        No categories found.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Previous</a>
+                        {% endif %}
+
+                        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

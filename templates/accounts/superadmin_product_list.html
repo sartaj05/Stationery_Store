@@ -1,0 +1,636 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .toolbar {
+            padding: 22px 32px 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-left h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.35rem;
+            margin-bottom: 4px;
+        }
+
+        .toolbar-left p {
+            color: #999;
+            font-size: .85rem;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 10px 18px;
+            font-size: .82rem;
+            font-weight: 700;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(232, 132, 26, .28);
+        }
+
+        .action-btn.secondary {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .filter-panel {
+            margin: 20px 32px 0;
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #999;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            outline: none;
+            font-size: .88rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .table-section {
+            padding: 24px 32px 32px;
+        }
+
+        .product-thumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: .7rem;
+            flex-shrink: 0;
+        }
+
+        .product-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 260px;
+        }
+
+        .product-cell strong {
+            display: block;
+            font-size: .9rem;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .product-cell span {
+            display: block;
+            font-size: .76rem;
+            color: #aaa;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge.success {
+            background: rgba(39,116,90,.1);
+            color: var(--jade);
+        }
+
+        .badge.warning {
+            background: rgba(212,160,23,.13);
+            color: #a87900;
+        }
+
+        .badge.danger {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .badge.info {
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .badge.muted {
+            background: var(--paper-dk);
+            color: #999;
+        }
+
+        .price-box strong {
+            display: block;
+            font-family: 'DM Mono', monospace;
+            color: var(--ink);
+            font-size: .9rem;
+        }
+
+        .price-box del {
+            display: block;
+            color: #aaa;
+            font-size: .75rem;
+            margin-top: 2px;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mini-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 11px;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            font-size: .74rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .mini-btn.edit {
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .mini-btn.delete {
+            background: rgba(192,57,43,.1);
+            color: var(--ruby);
+        }
+
+        .mini-btn.view {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1px solid var(--cream);
+        }
+
+        .mini-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 14px;
+        }
+
+        .empty-state h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.25rem;
+            margin-bottom: 6px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: 50px;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            color: var(--ink);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .82rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .pagination .current {
+            background: var(--saffron);
+            border-color: var(--saffron);
+            color: var(--ink);
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        @media (max-width: 1100px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .toolbar,
+            .filter-panel,
+            .table-section,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .filter-panel {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+
+            .filter-form {
+                grid-template-columns: 1fr;
+            }
+
+            .product-cell {
+                min-width: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}" class="active">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Products</h1>
+                <p>Manage product inventory, pricing, stock and visibility.</p>
+            </div>
+
+            <a href="{% url 'superadmin_product_create' %}" class="admin-link">
+                ➕ Add Product
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <h2>Product Management</h2>
+                <p>Add, edit, delete and control stock without touching Django Admin.</p>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
+                    ➕ Add Product
+                </a>
+                <a href="{% url 'superadmin_category_create' %}" class="action-btn secondary">
+                    ➕ Add Category
+                </a>
+            </div>
+        </section>
+
+        <section class="filter-panel">
+            <form method="get" class="filter-form">
+
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ query|default:'' }}"
+                        class="form-control"
+                        placeholder="Search product, brand, description..."
+                    >
+                </div>
+
+                <div class="filter-group">
+                    <label>Category</label>
+                    <select name="category" class="form-control">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}"
+                                {% if category_slug == category.slug %}selected{% endif %}>
+                                {{ category.icon|default:"📦" }} {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Stock / Status</label>
+                    <select name="stock" class="form-control">
+                        <option value="">All Products</option>
+                        <option value="active" {% if stock_filter == "active" %}selected{% endif %}>Active Products</option>
+                        <option value="inactive" {% if stock_filter == "inactive" %}selected{% endif %}>Inactive Products</option>
+                        <option value="low" {% if stock_filter == "low" %}selected{% endif %}>Low Stock</option>
+                        <option value="out" {% if stock_filter == "out" %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="action-btn primary">
+                    🔍 Search
+                </button>
+
+                <a href="{% url 'superadmin_product_list' %}" class="action-btn light">
+                    Reset
+                </a>
+
+            </form>
+        </section>
+
+        <section class="table-section">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2>All Products</h2>
+                    <a href="{% url 'product_list' %}" target="_blank">Public View →</a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Featured</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for product in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-thumb">
+                                            {% if product.image %}
+                                                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                                            {% else %}
+                                                📦
+                                            {% endif %}
+                                        </div>
+
+                                        <div>
+                                            <strong>{{ product.name }}</strong>
+                                            <span>
+                                                {% if product.brand %}
+                                                    {{ product.brand }}
+                                                {% else %}
+                                                    No brand added
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge info">
+                                        {{ product.category.icon|default:"📦" }} {{ product.category.name }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="price-box">
+                                        <strong>₹{{ product.final_price }}</strong>
+                                        {% if product.discount_price %}
+                                            <del>₹{{ product.price }}</del>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if product.stock <= 0 %}
+                                        <span class="badge danger">Out of Stock</span>
+                                    {% elif product.stock <= 5 %}
+                                        <span class="badge warning">{{ product.stock }} left</span>
+                                    {% else %}
+                                        <span class="badge success">{{ product.stock }} available</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if product.is_featured %}
+                                        <span class="badge success">Featured</span>
+                                    {% else %}
+                                        <span class="badge muted">Normal</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if product.is_active %}
+                                        <span class="badge success">Active</span>
+                                    {% else %}
+                                        <span class="badge danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+
+                                <td style="color:#999;font-size:.8rem">
+                                    {{ product.created_at|date:"d M Y" }}
+                                </td>
+
+                                <td>
+                                    <div class="row-actions" style="justify-content:flex-end">
+                                        <a
+                                            href="{% url 'product_detail' product.id %}"
+                                            target="_blank"
+                                            class="mini-btn view"
+                                        >
+                                            👁️ View
+                                        </a>
+
+                                        <a
+                                            href="{% url 'superadmin_product_update' product.id %}"
+                                            class="mini-btn edit"
+                                        >
+                                            ✏️ Edit
+                                        </a>
+
+                                        <a
+                                            href="{% url 'superadmin_product_delete' product.id %}"
+                                            class="mini-btn delete"
+                                        >
+                                            🗑️ Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <div class="icon">📦</div>
+                                        <h3>No products found</h3>
+                                        <p>Add your first product or clear the current filters.</p>
+
+                                        <div style="margin-top:20px">
+                                            <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
+                                                ➕ Add Product
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}">
+                        First
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}">
+                        ‹
+                    </a>
+                {% endif %}
+
+                <span class="current">
+                    {{ page_obj.number }}
+                </span>
+
+                <span>
+                    of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}">
+                        ›
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}">
+                        Last
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>>
+</body>
+</html>

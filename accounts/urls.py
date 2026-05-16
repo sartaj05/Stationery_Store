@@ -5,5 +5,63 @@ urlpatterns = [
     path("login/", views.custom_login, name="login"),
     path("signup/", views.signup, name="signup"),
     path("logout/", views.custom_logout, name="logout"),
-    path("superadmin/dashboard/", views.superadmin_dashboard, name="superadmin_dashboard"),
+
+    path(
+        "superadmin/dashboard/",
+        views.superadmin_dashboard,
+        name="superadmin_dashboard"
+    ),
+
+    path(
+        "superadmin/categories/",
+        views.superadmin_category_list,
+        name="superadmin_category_list"
+    ),
+    path(
+        "superadmin/categories/add/",
+        views.superadmin_category_create,
+        name="superadmin_category_create"
+    ),
+    path(
+        "superadmin/categories/<int:pk>/edit/",
+        views.superadmin_category_update,
+        name="superadmin_category_update"
+    ),
+    path(
+        "superadmin/categories/<int:pk>/delete/",
+        views.superadmin_category_delete,
+        name="superadmin_category_delete"
+    ),
+
+    path(
+        "superadmin/products/",
+        views.superadmin_product_list,
+        name="superadmin_product_list"
+    ),
+    path(
+        "superadmin/products/add/",
+        views.superadmin_product_create,
+        name="superadmin_product_create"
+    ),
+    path(
+        "superadmin/products/<int:pk>/edit/",
+        views.superadmin_product_update,
+        name="superadmin_product_update"
+    ),
+    path(
+        "superadmin/products/<int:pk>/delete/",
+        views.superadmin_product_delete,
+        name="superadmin_product_delete"
+    ),
+
+    path(
+        "superadmin/orders/",
+        views.superadmin_order_list,
+        name="superadmin_order_list"
+    ),
+    path(
+        "superadmin/orders/<int:pk>/",
+        views.superadmin_order_detail,
+        name="superadmin_order_detail"
+    ),
 ]

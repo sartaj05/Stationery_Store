@@ -5,9 +5,59 @@
     <meta charset="UTF-8">
     <title>Superadmin Dashboard | Delhi Stationery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .action-row {
+            padding: 20px 32px 0;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: .82rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: .2s ease;
+        }
+
+        .quick-btn.orange {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .quick-btn.teal {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .quick-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            background: var(--paper-dk);
+        }
+
+        .status-pending { color: var(--gold); }
+        .status-confirmed { color: var(--teal); }
+        .status-delivered { color: var(--jade); }
+        .status-cancelled { color: var(--ruby); }
+    </style>
 </head>
 <body>
 
@@ -21,11 +71,10 @@
 
         <nav class="side-menu">
             <a href="{% url 'superadmin_dashboard' %}" class="active">📊 Dashboard</a>
-            <a href="/admin/store/product/">📦 Manage Products</a>
-            <a href="/admin/store/category/">🗂️ Manage Categories</a>
-            <a href="/admin/store/order/">🛒 Manage Orders</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
             <a href="{% url 'home' %}">🌐 Visit Website</a>
-            <a href="/admin/">⚙️ Django Admin</a>
             <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
         </nav>
     </aside>
@@ -37,50 +86,78 @@
                 <h1>Dashboard</h1>
                 <p>Welcome back, <strong>{{ request.user.username }}</strong> 👋</p>
             </div>
-            <a href="/admin/" class="admin-link">⚙️ Django Admin</a>
+            <a href="{% url 'home' %}" class="admin-link">🌐 Website</a>
         </header>
 
-        <!-- Stats -->
+        {% if messages %}
+            <div style="padding:20px 32px 0">
+                {% for message in messages %}
+                    <div class="msg {{ message.tags }}" style="background:#fff;border-left:4px solid var(--teal);padding:12px 16px;border-radius:8px;margin-bottom:10px">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <section class="stats-grid">
             <div class="stat-card blue">
                 <h3>Total Products</h3>
                 <h2>{{ total_products }}</h2>
             </div>
+
             <div class="stat-card green">
                 <h3>Active Products</h3>
                 <h2>{{ active_products }}</h2>
             </div>
+
             <div class="stat-card purple">
                 <h3>Categories</h3>
                 <h2>{{ total_categories }}</h2>
             </div>
+
             <div class="stat-card orange">
                 <h3>Total Orders</h3>
                 <h2>{{ total_orders }}</h2>
             </div>
         </section>
 
-        <!-- Quick Actions -->
-        <div style="padding:20px 32px 0;display:flex;gap:12px;flex-wrap:wrap">
-            <a href="/admin/store/product/add/" style="display:inline-flex;align-items:center;gap:8px;background:var(--saffron);color:var(--ink);padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:700;text-decoration:none;transition:.2s ease">
-                ➕ Add Product
-            </a>
-            <a href="/admin/store/category/add/" style="display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:700;text-decoration:none;transition:.2s ease">
-                ➕ Add Category
-            </a>
-            <a href="/admin/store/order/" style="display:inline-flex;align-items:center;gap:8px;background:var(--paper-dk);color:var(--ink);border:1.5px solid var(--cream);padding:10px 20px;border-radius:50px;font-size:.82rem;font-weight:600;text-decoration:none;transition:.2s ease">
-                📋 View All Orders
-            </a>
+        <section class="stats-grid" style="padding-top:20px">
+            <div class="stat-card orange">
+                <h3>Pending Orders</h3>
+                <h2>{{ pending_orders }}</h2>
+            </div>
+
+            <div class="stat-card green">
+                <h3>Delivered Orders</h3>
+                <h2>{{ delivered_orders }}</h2>
+            </div>
+
+            <div class="stat-card blue">
+                <h3>Low Stock Alert</h3>
+                <h2>{{ low_stock_products|length }}</h2>
+            </div>
+
+            <div class="stat-card purple">
+                <h3>Store Mode</h3>
+                <h2 style="font-size:1.4rem">LIVE</h2>
+            </div>
+        </section>
+
+        <div class="action-row">
+            <a href="{% url 'superadmin_product_create' %}" class="quick-btn orange">➕ Add Product</a>
+            <a href="{% url 'superadmin_category_create' %}" class="quick-btn teal">➕ Add Category</a>
+            <a href="{% url 'superadmin_order_list' %}" class="quick-btn light">📋 View Orders</a>
+            <a href="{% url 'product_list' %}" class="quick-btn light">🛍️ Public Products</a>
         </div>
 
-        <!-- Content -->
         <section class="content-grid">
 
             <div class="panel-card">
                 <div class="panel-header">
                     <h2>Latest Orders</h2>
-                    <a href="/admin/store/order/">View All →</a>
+                    <a href="{% url 'superadmin_order_list' %}">View All →</a>
                 </div>
+
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -89,32 +166,47 @@
                                 <th>Product</th>
                                 <th>Qty</th>
                                 <th>Payment</th>
+                                <th>Status</th>
                                 <th>Date</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             {% for order in latest_orders %}
-                            <tr>
-                                <td><strong>{{ order.name }}</strong><br><span style="font-size:.75rem;color:#aaa">{{ order.phone }}</span></td>
-                                <td>{{ order.product.name }}</td>
-                                <td>
-                                    <span style="background:var(--paper-dk);padding:3px 10px;border-radius:50px;font-size:.8rem;font-weight:600">
-                                        {{ order.quantity }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span style="background:{% if order.payment_method == 'COD' %}rgba(26,107,107,.1);color:var(--teal){% else %}rgba(232,132,26,.1);color:var(--saffron-dk){% endif %};padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:700">
-                                        {{ order.payment_method }}
-                                    </span>
-                                </td>
-                                <td style="color:#aaa;font-size:.8rem">{{ order.created_at|date:"d M Y" }}</td>
-                            </tr>
+                                <tr>
+                                    <td>
+                                        <strong>{{ order.name }}</strong><br>
+                                        <span style="font-size:.75rem;color:#aaa">{{ order.phone }}</span>
+                                    </td>
+
+                                    <td>{{ order.product.name }}</td>
+
+                                    <td>
+                                        <span style="background:var(--paper-dk);padding:3px 10px;border-radius:50px;font-size:.8rem;font-weight:600">
+                                            {{ order.quantity }}
+                                        </span>
+                                    </td>
+
+                                    <td>{{ order.payment_method }}</td>
+
+                                    <td>
+                                        <a href="{% url 'superadmin_order_detail' order.id %}" style="text-decoration:none">
+                                            <span class="status-pill status-{{ order.status|lower }}">
+                                                {{ order.get_status_display }}
+                                            </span>
+                                        </a>
+                                    </td>
+
+                                    <td style="color:#aaa;font-size:.8rem">
+                                        {{ order.created_at|date:"d M Y" }}
+                                    </td>
+                                </tr>
                             {% empty %}
-                            <tr>
-                                <td colspan="5" style="text-align:center;color:#aaa;padding:32px">
-                                    No orders yet. 📦
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" style="text-align:center;color:#aaa;padding:32px">
+                                        No orders yet. Humanity briefly resisted buying notebooks. 📦
+                                    </td>
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -124,21 +216,22 @@
             <div class="panel-card">
                 <div class="panel-header">
                     <h2>⚠️ Low Stock</h2>
-                    <a href="/admin/store/product/">Manage →</a>
+                    <a href="{% url 'superadmin_product_list' %}?stock=low">Manage →</a>
                 </div>
+
                 <div class="low-stock-list">
                     {% for product in low_stock_products %}
-                    <div class="stock-item">
-                        <div>
-                            <h4>{{ product.name }}</h4>
-                            <p>{{ product.category.name }}</p>
+                        <div class="stock-item">
+                            <div>
+                                <h4>{{ product.name }}</h4>
+                                <p>{{ product.category.name }}</p>
+                            </div>
+                            <span>{{ product.stock }} left</span>
                         </div>
-                        <span>{{ product.stock }} left</span>
-                    </div>
                     {% empty %}
-                    <div style="padding:32px 24px;text-align:center;color:#aaa">
-                        ✅ All products have sufficient stock.
-                    </div>
+                        <div style="padding:32px 24px;text-align:center;color:#aaa">
+                            ✅ All products have sufficient stock.
+                        </div>
                     {% endfor %}
                 </div>
             </div>
