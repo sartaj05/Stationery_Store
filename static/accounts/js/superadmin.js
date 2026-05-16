@@ -114,13 +114,16 @@ function previewProductImage() {
     });
 }
 
-
-/* ===============================
-   ACTIVE SIDEBAR LINK
-================================= */
 function highlightActiveSidebarLink() {
     const currentPath = window.location.pathname;
     const links = document.querySelectorAll(".side-menu a");
+
+    links.forEach(function (link) {
+        link.classList.remove("active");
+    });
+
+    let bestMatch = null;
+    let bestLength = 0;
 
     links.forEach(function (link) {
         const href = link.getAttribute("href");
@@ -129,23 +132,43 @@ function highlightActiveSidebarLink() {
             return;
         }
 
+        let linkPath;
+
         try {
-            const linkPath = new URL(href, window.location.origin).pathname;
-
-            if (currentPath === linkPath || currentPath.startsWith(linkPath)) {
-                links.forEach(function (item) {
-                    item.classList.remove("active");
-                });
-
-                link.classList.add("active");
-            }
+            linkPath = new URL(href, window.location.origin).pathname;
         } catch (error) {
-            // Ignore invalid URL. Browsers, what a circus.
+            return;
+        }
+
+        /*
+           Important:
+           "/" should only be active on homepage.
+           Otherwise every dashboard URL matches "/".
+           Truly elite nonsense, courtesy of path matching.
+        */
+        if (linkPath === "/") {
+            if (currentPath === "/") {
+                bestMatch = link;
+                bestLength = 1;
+            }
+            return;
+        }
+
+        if (
+            currentPath === linkPath ||
+            currentPath.startsWith(linkPath)
+        ) {
+            if (linkPath.length > bestLength) {
+                bestMatch = link;
+                bestLength = linkPath.length;
+            }
         }
     });
+
+    if (bestMatch) {
+        bestMatch.classList.add("active");
+    }
 }
-
-
 /* ===============================
    PREVENT DOUBLE FORM SUBMIT
 ================================= */
