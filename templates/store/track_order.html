@@ -1,0 +1,244 @@
+{% extends "store/base.html" %}
+
+{% block title %}Track Order | Delhi Stationery{% endblock %}
+
+{% block content %}
+
+<section class="page-banner">
+    <div class="container">
+        <h1>Track Your Order</h1>
+        <p>Check your stationery order status using phone number or order ID.</p>
+    </div>
+</section>
+
+<section class="container section">
+
+    <div class="track-layout">
+
+        <div class="track-card">
+            <h2>Find Your Order</h2>
+            <p class="track-subtitle">
+                Enter the phone number used during checkout. Order ID is optional, but useful if you have multiple orders.
+            </p>
+
+            <form method="get" class="track-form">
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input
+                        type="text"
+                        name="phone"
+                        class="form-control"
+                        placeholder="Enter 10 digit mobile number"
+                        value="{{ phone|default:'' }}"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Order ID Optional</label>
+                    <input
+                        type="text"
+                        name="order_id"
+                        class="form-control"
+                        placeholder="Example: 12"
+                        value="{{ order_id|default:'' }}"
+                    >
+                </div>
+
+                <button type="submit" class="btn primary-btn full-btn">
+                    🔍 Track Order
+                </button>
+            </form>
+
+            <div class="track-help-box">
+                <strong>Need help?</strong>
+                <p>
+                    If you cannot find your order, contact us on WhatsApp with your phone number and product name.
+                </p>
+            </div>
+        </div>
+
+        <div class="track-info-card">
+            <div class="track-info-icon">📦</div>
+            <h3>Order Status Meaning</h3>
+
+            <div class="status-guide">
+                <div>
+                    <span class="status-dot pending"></span>
+                    <p><strong>Pending</strong> Order received, confirmation pending.</p>
+                </div>
+                <div>
+                    <span class="status-dot confirmed"></span>
+                    <p><strong>Confirmed</strong> Order confirmed by store team.</p>
+                </div>
+                <div>
+                    <span class="status-dot packed"></span>
+                    <p><strong>Packed</strong> Product packed for delivery.</p>
+                </div>
+                <div>
+                    <span class="status-dot delivery"></span>
+                    <p><strong>Out for Delivery</strong> Delivery is on the way.</p>
+                </div>
+                <div>
+                    <span class="status-dot delivered"></span>
+                    <p><strong>Delivered</strong> Order completed successfully.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% if searched %}
+        <div class="track-results">
+
+            <div class="section-title" style="margin-bottom:28px">
+                <h2>Order Results</h2>
+                <p>Latest matching orders are shown below.</p>
+            </div>
+
+            {% if orders %}
+                <div class="order-track-list">
+                    {% for order in orders %}
+                    <div class="order-track-card">
+
+                        <div class="order-track-header">
+                            <div>
+                                <span class="order-id">Order #{{ order.id }}</span>
+                                <h3>{{ order.product.name }}</h3>
+                                <p>{{ order.created_at|date:"d M Y, h:i A" }}</p>
+                            </div>
+
+                            {% if order.status == "PENDING" %}
+                                <span class="order-status pending">Pending</span>
+                            {% elif order.status == "CONFIRMED" %}
+                                <span class="order-status confirmed">Confirmed</span>
+                            {% elif order.status == "PACKED" %}
+                                <span class="order-status packed">Packed</span>
+                            {% elif order.status == "OUT_FOR_DELIVERY" %}
+                                <span class="order-status delivery">Out for Delivery</span>
+                            {% elif order.status == "DELIVERED" %}
+                                <span class="order-status delivered">Delivered</span>
+                            {% elif order.status == "CANCELLED" %}
+                                <span class="order-status cancelled">Cancelled</span>
+                            {% else %}
+                                <span class="order-status pending">{{ order.status }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="order-track-body">
+                            <div class="order-product-row">
+                                <div class="order-product-img">
+                                    {% if order.product.image %}
+                                        <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+                                    {% else %}
+                                        📦
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <h4>{{ order.product.name }}</h4>
+                                    <p>{{ order.product.category.name }}</p>
+                                    {% if order.product.brand %}
+                                        <p>Brand: {{ order.product.brand }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="order-summary-grid">
+                                <div>
+                                    <span>Customer</span>
+                                    <strong>{{ order.name }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Phone</span>
+                                    <strong>{{ order.phone }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Quantity</span>
+                                    <strong>{{ order.quantity }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Payment</span>
+                                    <strong>{{ order.get_payment_method_display }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Total Amount</span>
+                                    <strong>₹{{ order.total_price }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Current Status</span>
+                                    <strong>{{ order.get_status_display }}</strong>
+                                </div>
+                            </div>
+
+                            <div class="order-address">
+                                <span>Delivery Address</span>
+                                <p>{{ order.address }}</p>
+                            </div>
+
+                            <div class="order-progress">
+                                <div class="progress-step {% if order.status == 'PENDING' or order.status == 'CONFIRMED' or order.status == 'PACKED' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}">
+                                    <span>1</span>
+                                    <p>Pending</p>
+                                </div>
+
+                                <div class="progress-line {% if order.status == 'CONFIRMED' or order.status == 'PACKED' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}"></div>
+
+                                <div class="progress-step {% if order.status == 'CONFIRMED' or order.status == 'PACKED' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}">
+                                    <span>2</span>
+                                    <p>Confirmed</p>
+                                </div>
+
+                                <div class="progress-line {% if order.status == 'PACKED' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}"></div>
+
+                                <div class="progress-step {% if order.status == 'PACKED' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}">
+                                    <span>3</span>
+                                    <p>Packed</p>
+                                </div>
+
+                                <div class="progress-line {% if order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}"></div>
+
+                                <div class="progress-step {% if order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED' %}active{% endif %}">
+                                    <span>4</span>
+                                    <p>Delivery</p>
+                                </div>
+
+                                <div class="progress-line {% if order.status == 'DELIVERED' %}active{% endif %}"></div>
+
+                                <div class="progress-step {% if order.status == 'DELIVERED' %}active{% endif %}">
+                                    <span>5</span>
+                                    <p>Done</p>
+                                </div>
+                            </div>
+
+                            {% if order.status == "CANCELLED" %}
+                            <div class="cancelled-note">
+                                ❌ This order has been cancelled. Contact support if this is incorrect.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-box">
+                    <div style="font-size:3rem;margin-bottom:16px">🔍</div>
+                    <h3>No order found</h3>
+                    <p>Please check your phone number or order ID and try again.</p>
+                    <a href="{% url 'contact' %}" class="btn primary-btn" style="margin-top:20px">
+                        Contact Support
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    {% endif %}
+
+</section>
+
+{% endblock %}

@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.contrib import messages
 
-from .models import Product, Category
+from .models import Product, Category, Order
 from .forms import OrderForm
 
 
@@ -28,9 +28,9 @@ def product_list(request):
 
     if query:
         products = products.filter(
-            Q(name__icontains=query) |
-            Q(brand__icontains=query) |
-            Q(description__icontains=query)
+            Q(name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(description__icontains=query)
         )
 
     if category_slug:
@@ -83,7 +83,10 @@ def order_product(request, product_id):
             product.stock -= order.quantity
             product.save()
 
-            messages.success(request, "Your order has been placed successfully.")
+            messages.success(
+                request,
+                f"Your order has been placed successfully. Your Order ID is #{order.id}."
+            )
             return redirect("order_success")
 
     else:
@@ -98,6 +101,44 @@ def order_product(request, product_id):
 
 def order_success(request):
     return render(request, "store/order_success.html")
+
+
+def track_order(request):
+    orders = None
+    searched = False
+
+    phone = request.GET.get("phone", "").strip()
+    order_id = request.GET.get("order_id", "").strip()
+
+    if phone or order_id:
+        searched = True
+
+        orders = Order.objects.select_related("product", "product__category").all()
+
+        if phone:
+            orders = orders.filter(phone=phone)
+
+        if order_id:
+            if order_id.isdigit():
+                orders = orders.filter(id=int(order_id))
+            else:
+                orders = Order.objects.none()
+
+        orders = orders.order_by("-created_at")
+
+        if not orders.exists():
+            messages.error(
+                request,
+                "No order found with the provided details. Please check your phone number or order ID."
+            )
+
+    context = {
+        "orders": orders,
+        "searched": searched,
+        "phone": phone,
+        "order_id": order_id,
+    }
+    return render(request, "store/track_order.html", context)
 
 
 def about(request):
