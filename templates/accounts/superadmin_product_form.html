@@ -131,6 +131,7 @@
             display: flex;
             align-items: flex-start;
             gap: 10px;
+            cursor: pointer;
         }
 
         .check-card input {
@@ -341,12 +342,15 @@
 
         .product-preview-image {
             height: 170px;
-            background: #fff;
+            background:
+                radial-gradient(circle at top right, rgba(232,132,26,.13), transparent 38%),
+                #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #aaa;
             overflow: hidden;
+            font-size: 3rem;
         }
 
         .product-preview-image img {
@@ -386,6 +390,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .price-preview strong {
@@ -397,6 +402,38 @@
         .price-preview del {
             color: #aaa;
             font-size: .86rem;
+        }
+
+        .preview-badge-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .preview-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 800;
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .preview-badge.warning {
+            background: rgba(212,160,23,.14);
+            color: #a87900;
+        }
+
+        .preview-badge.danger {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .preview-badge.success {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
         }
 
         @media (max-width: 1050px) {
@@ -650,72 +687,106 @@
 
                             <div class="help-item">
                                 <strong>📦 Stock</strong>
-                                <p>
-                                    Stock 0 means out of stock. Stock 1 to 5 will appear in low stock alerts.
-                                </p>
+                                <p>Stock 0 means out of stock. Stock 1 to 5 will appear in low stock alerts.</p>
                             </div>
 
                             <div class="help-item">
                                 <strong>💰 Discount Price</strong>
-                                <p>
-                                    Discount price must be less than original price. Otherwise the form will reject it, as it should.
-                                </p>
+                                <p>Discount price must be less than original price. Otherwise the form will reject it, as it should.</p>
                             </div>
 
                             <div class="help-item">
                                 <strong>⭐ Featured</strong>
-                                <p>
-                                    Featured products appear on the homepage featured section.
-                                </p>
+                                <p>Featured products appear on the homepage featured section.</p>
                             </div>
 
                             <div class="help-item">
                                 <strong>👁️ Active</strong>
-                                <p>
-                                    Inactive products stay saved but are hidden from public product pages.
-                                </p>
+                                <p>Inactive products stay saved but are hidden from public product pages.</p>
                             </div>
 
                         </div>
                     </div>
                 </div>
 
-                {% if product %}
                 <div class="product-preview-card">
-                    <div class="product-preview-image">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    <div class="product-preview-image" id="livePreviewImageBox">
+                        {% if product and product.image %}
+                            <img id="livePreviewImage" src="{{ product.image.url }}" alt="{{ product.name }}">
                         {% else %}
-                            📦
+                            <span id="livePreviewFallback">📦</span>
+                            <img id="livePreviewImage" src="" alt="Product preview" style="display:none">
                         {% endif %}
                     </div>
 
                     <div class="product-preview-body">
-                        <span>{{ product.category.name }}</span>
-                        <h3>{{ product.name }}</h3>
+                        <span id="livePreviewCategory">
+                            {% if product %}
+                                {{ product.category.name }}
+                            {% else %}
+                                Select Category
+                            {% endif %}
+                        </span>
 
-                        {% if product.description %}
-                            <p>{{ product.description|truncatewords:18 }}</p>
-                        {% else %}
-                            <p>No description added.</p>
-                        {% endif %}
+                        <h3 id="livePreviewName">
+                            {% if product %}
+                                {{ product.name }}
+                            {% else %}
+                                Product Name
+                            {% endif %}
+                        </h3>
+
+                        <p id="livePreviewDescription">
+                            {% if product and product.description %}
+                                {{ product.description|truncatewords:18 }}
+                            {% else %}
+                                Product description will appear here.
+                            {% endif %}
+                        </p>
 
                         <div class="price-preview">
-                            <strong>₹{{ product.final_price }}</strong>
-                            {% if product.discount_price %}
-                                <del>₹{{ product.price }}</del>
-                            {% endif %}
+                            <strong id="livePreviewFinalPrice">
+                                {% if product %}
+                                    ₹{{ product.final_price }}
+                                {% else %}
+                                    ₹0.00
+                                {% endif %}
+                            </strong>
+
+                            <del id="livePreviewOriginalPrice"
+                                {% if not product or not product.discount_price %}style="display:none"{% endif %}
+                            >
+                                {% if product and product.discount_price %}
+                                    ₹{{ product.price }}
+                                {% endif %}
+                            </del>
                         </div>
 
-                        <div style="margin-top:12px;font-size:.82rem;color:#777">
-                            Stock:
-                            <strong style="color:var(--ink)">
-                                {{ product.stock }}
-                            </strong>
+                        <div class="preview-badge-row">
+                            <span id="livePreviewStockBadge" class="preview-badge success">
+                                {% if product %}
+                                    Stock: {{ product.stock }}
+                                {% else %}
+                                    Stock: 0
+                                {% endif %}
+                            </span>
+
+                            <span id="livePreviewFeaturedBadge" class="preview-badge warning"
+                                {% if not product or not product.is_featured %}style="display:none"{% endif %}
+                            >
+                                Featured
+                            </span>
+
+                            <span id="livePreviewActiveBadge" class="preview-badge success">
+                                {% if product and not product.is_active %}
+                                    Inactive
+                                {% else %}
+                                    Active
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                 </div>
-                {% endif %}
             </aside>
 
         </section>
@@ -724,5 +795,177 @@
 </div>
 
 <script src="{% static 'accounts/js/superadmin.js' %}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const nameInput = document.querySelector("input[name='name']");
+        const brandInput = document.querySelector("input[name='brand']");
+        const descriptionInput = document.querySelector("textarea[name='description']");
+        const categoryInput = document.querySelector("select[name='category']");
+        const priceInput = document.querySelector("input[name='price']");
+        const discountInput = document.querySelector("input[name='discount_price']");
+        const stockInput = document.querySelector("input[name='stock']");
+        const imageInput = document.querySelector("input[type='file'][name='image']");
+        const featuredInput = document.querySelector("input[name='is_featured']");
+        const activeInput = document.querySelector("input[name='is_active']");
+
+        const previewName = document.getElementById("livePreviewName");
+        const previewDescription = document.getElementById("livePreviewDescription");
+        const previewCategory = document.getElementById("livePreviewCategory");
+        const previewFinalPrice = document.getElementById("livePreviewFinalPrice");
+        const previewOriginalPrice = document.getElementById("livePreviewOriginalPrice");
+        const previewStockBadge = document.getElementById("livePreviewStockBadge");
+        const previewFeaturedBadge = document.getElementById("livePreviewFeaturedBadge");
+        const previewActiveBadge = document.getElementById("livePreviewActiveBadge");
+        const previewImage = document.getElementById("livePreviewImage");
+        const previewFallback = document.getElementById("livePreviewFallback");
+
+        function getSelectedCategoryText() {
+            if (!categoryInput || !categoryInput.options.length) {
+                return "Select Category";
+            }
+
+            const selected = categoryInput.options[categoryInput.selectedIndex];
+
+            if (!selected || !selected.textContent.trim()) {
+                return "Select Category";
+            }
+
+            return selected.textContent.trim();
+        }
+
+        function formatPrice(value) {
+            const number = parseFloat(value);
+
+            if (Number.isNaN(number)) {
+                return "₹0.00";
+            }
+
+            return "₹" + number.toFixed(2);
+        }
+
+        function updateStockBadge() {
+            if (!stockInput || !previewStockBadge) {
+                return;
+            }
+
+            const stock = parseInt(stockInput.value || "0", 10);
+
+            previewStockBadge.classList.remove("success", "warning", "danger");
+
+            if (stock <= 0) {
+                previewStockBadge.textContent = "Out of Stock";
+                previewStockBadge.classList.add("danger");
+            } else if (stock <= 5) {
+                previewStockBadge.textContent = "Low Stock: " + stock;
+                previewStockBadge.classList.add("warning");
+            } else {
+                previewStockBadge.textContent = "Stock: " + stock;
+                previewStockBadge.classList.add("success");
+            }
+        }
+
+        function updatePreview() {
+            if (previewName && nameInput) {
+                previewName.textContent = nameInput.value.trim() || "Product Name";
+            }
+
+            if (previewDescription && descriptionInput) {
+                const text = descriptionInput.value.trim();
+                previewDescription.textContent = text || "Product description will appear here.";
+            }
+
+            if (previewCategory) {
+                previewCategory.textContent = getSelectedCategoryText();
+            }
+
+            const priceValue = priceInput ? priceInput.value : "";
+            const discountValue = discountInput ? discountInput.value : "";
+
+            if (previewFinalPrice) {
+                if (discountValue && parseFloat(discountValue) > 0) {
+                    previewFinalPrice.textContent = formatPrice(discountValue);
+                } else {
+                    previewFinalPrice.textContent = formatPrice(priceValue);
+                }
+            }
+
+            if (previewOriginalPrice) {
+                if (discountValue && parseFloat(discountValue) > 0 && priceValue) {
+                    previewOriginalPrice.style.display = "inline";
+                    previewOriginalPrice.textContent = formatPrice(priceValue);
+                } else {
+                    previewOriginalPrice.style.display = "none";
+                }
+            }
+
+            updateStockBadge();
+
+            if (previewFeaturedBadge && featuredInput) {
+                previewFeaturedBadge.style.display = featuredInput.checked ? "inline-flex" : "none";
+            }
+
+            if (previewActiveBadge && activeInput) {
+                previewActiveBadge.textContent = activeInput.checked ? "Active" : "Inactive";
+                previewActiveBadge.classList.remove("success", "danger");
+                previewActiveBadge.classList.add(activeInput.checked ? "success" : "danger");
+            }
+        }
+
+        function updateLiveImagePreview() {
+            if (!imageInput || !previewImage) {
+                return;
+            }
+
+            const file = imageInput.files && imageInput.files[0];
+
+            if (!file) {
+                updatePreview();
+                return;
+            }
+
+            if (!file.type.startsWith("image/")) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                previewImage.src = event.target.result;
+                previewImage.style.display = "block";
+
+                if (previewFallback) {
+                    previewFallback.style.display = "none";
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        [
+            nameInput,
+            brandInput,
+            descriptionInput,
+            categoryInput,
+            priceInput,
+            discountInput,
+            stockInput,
+            featuredInput,
+            activeInput
+        ].forEach(function (input) {
+            if (input) {
+                input.addEventListener("input", updatePreview);
+                input.addEventListener("change", updatePreview);
+            }
+        });
+
+        if (imageInput) {
+            imageInput.addEventListener("change", updateLiveImagePreview);
+        }
+
+        updatePreview();
+    });
+</script>
+
 </body>
 </html>
