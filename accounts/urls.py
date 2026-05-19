@@ -64,4 +64,31 @@ urlpatterns = [
         views.superadmin_order_detail,
         name="superadmin_order_detail"
     ),
+
+    path(
+        "superadmin/bulk-requests/",
+        views.superadmin_bulk_request_list,
+        name="superadmin_bulk_request_list"
+    ),
+    path(
+        "superadmin/bulk-requests/<int:pk>/",
+        views.superadmin_bulk_request_detail,
+        name="superadmin_bulk_request_detail"
+    ),
+
+    path(
+        "superadmin/customers/",
+        views.superadmin_customer_list,
+        name="superadmin_customer_list"
+    ),
+    path(
+        "superadmin/customers/<int:pk>/",
+        views.superadmin_customer_detail,
+        name="superadmin_customer_detail"
+    ),
+    path(
+        "superadmin/customers/<int:pk>/toggle-status/",
+        views.superadmin_customer_toggle_status,
+        name="superadmin_customer_toggle_status"
+    ),
 ]

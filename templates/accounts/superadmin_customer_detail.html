@@ -1,0 +1,635 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Detail | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .detail-wrap {
+            padding: 28px 32px 32px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 22px;
+        }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 22px;
+        }
+
+        .detail-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .detail-card-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .detail-body {
+            padding: 22px 24px;
+        }
+
+        .customer-profile {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .customer-avatar-lg {
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            background: var(--saffron);
+            color: var(--ink);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .customer-profile h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+
+        .customer-profile p {
+            color: #999;
+            font-size: .88rem;
+            margin-top: 3px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .info-item {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: .68rem;
+            color: #999;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 5px;
+        }
+
+        .info-item strong,
+        .info-item span {
+            color: var(--ink);
+            font-size: .92rem;
+            line-height: 1.5;
+        }
+
+        .stats-grid-mini {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .mini-stat {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .mini-stat h3 {
+            color: #999;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 8px;
+        }
+
+        .mini-stat strong {
+            font-family: 'DM Mono', monospace;
+            color: var(--ink);
+            font-size: 1.35rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: .74rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .badge.active {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .badge.inactive {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .badge.pending {
+            background: rgba(212,160,23,.14);
+            color: #a87900;
+        }
+
+        .badge.confirmed {
+            background: rgba(26,107,107,.12);
+            color: var(--teal);
+        }
+
+        .badge.packed {
+            background: rgba(142,68,173,.12);
+            color: #8e44ad;
+        }
+
+        .badge.delivery {
+            background: rgba(41,128,185,.12);
+            color: #2980b9;
+        }
+
+        .badge.delivered {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .badge.cancelled {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 11px 20px;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .action-btn.danger {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .action-btn.success {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .order-main strong {
+            display: block;
+            font-size: .9rem;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .order-main span {
+            display: block;
+            color: #999;
+            font-size: .76rem;
+        }
+
+        .price-text {
+            font-family: 'DM Mono', monospace;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .mini-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 12px;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            font-size: .74rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .mini-btn.view {
+            background: rgba(26,107,107,.1);
+            color: var(--teal);
+        }
+
+        .empty-state {
+            padding: 44px 24px;
+            text-align: center;
+            color: #999;
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        @media (max-width: 1000px) {
+            .top-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .detail-wrap,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .customer-profile {
+                align-items: flex-start;
+            }
+
+            .info-grid,
+            .stats-grid-mini {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
+            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Customer Detail</h1>
+                <p>Registered customer profile and order activity.</p>
+            </div>
+
+            <a href="{% url 'superadmin_customer_list' %}" class="admin-link">
+                ← Back to Customers
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="detail-wrap">
+
+            <div class="top-grid">
+
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <h2>Customer Profile</h2>
+
+                        {% if customer.is_active %}
+                            <span class="badge active">Active</span>
+                        {% else %}
+                            <span class="badge inactive">Inactive</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="detail-body">
+                        <div class="customer-profile">
+                            <div class="customer-avatar-lg">
+                                {{ customer.username|first|upper }}
+                            </div>
+
+                            <div>
+                                <h2>
+                                    {% if customer.get_full_name %}
+                                        {{ customer.get_full_name }}
+                                    {% else %}
+                                        {{ customer.username }}
+                                    {% endif %}
+                                </h2>
+                                <p>@{{ customer.username }}</p>
+                                {% if customer.email %}
+                                    <p>{{ customer.email }}</p>
+                                {% else %}
+                                    <p>No email added</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Username</label>
+                                <strong>{{ customer.username }}</strong>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Email</label>
+                                {% if customer.email %}
+                                    <strong>{{ customer.email }}</strong>
+                                {% else %}
+                                    <span>Not provided</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>First Name</label>
+                                {% if customer.first_name %}
+                                    <strong>{{ customer.first_name }}</strong>
+                                {% else %}
+                                    <span>Not provided</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>Last Name</label>
+                                {% if customer.last_name %}
+                                    <strong>{{ customer.last_name }}</strong>
+                                {% else %}
+                                    <span>Not provided</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>Date Joined</label>
+                                <strong>{{ customer.date_joined|date:"d M Y, h:i A" }}</strong>
+                            </div>
+
+                            <div class="info-item">
+                                <label>Last Login</label>
+                                {% if customer.last_login %}
+                                    <strong>{{ customer.last_login|date:"d M Y, h:i A" }}</strong>
+                                {% else %}
+                                    <span>Never logged in</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+                            <form
+                                method="post"
+                                action="{% url 'superadmin_customer_toggle_status' customer.id %}"
+                                data-prevent-double-submit="true"
+                                style="display:inline"
+                            >
+                                {% csrf_token %}
+
+                                {% if customer.is_active %}
+                                    <button
+                                        type="submit"
+                                        class="action-btn danger"
+                                        data-confirm-delete
+                                        data-confirm-message="Are you sure you want to deactivate this customer?"
+                                    >
+                                        🚫 Deactivate Customer
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="action-btn success">
+                                        ✅ Activate Customer
+                                    </button>
+                                {% endif %}
+                            </form>
+
+                            <a href="{% url 'superadmin_customer_list' %}" class="action-btn light">
+                                ← Back
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <h2>Customer Summary</h2>
+                    </div>
+
+                    <div class="detail-body">
+                        <div class="stats-grid-mini">
+                            <div class="mini-stat">
+                                <h3>Total Orders</h3>
+                                <strong>{{ orders.count }}</strong>
+                            </div>
+
+                            <div class="mini-stat">
+                                <h3>Total Spent</h3>
+                                <strong>₹{{ total_spent }}</strong>
+                            </div>
+
+                            <div class="mini-stat">
+                                <h3>Pending</h3>
+                                <strong>{{ pending_orders }}</strong>
+                            </div>
+
+                            <div class="mini-stat">
+                                <h3>Delivered</h3>
+                                <strong>{{ delivered_orders }}</strong>
+                            </div>
+
+                            <div class="mini-stat">
+                                <h3>Cancelled</h3>
+                                <strong>{{ cancelled_orders }}</strong>
+                            </div>
+
+                            <div class="mini-stat">
+                                <h3>Status</h3>
+                                {% if customer.is_active %}
+                                    <strong style="color:var(--jade)">Active</strong>
+                                {% else %}
+                                    <strong style="color:var(--ruby)">Inactive</strong>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Customer Orders</h2>
+                    <a href="{% url 'superadmin_order_list' %}?q={{ customer.username }}" style="font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none">
+                        All Orders →
+                    </a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th style="text-align:right">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>
+                                    <div class="order-main">
+                                        <strong>#{{ order.id }}</strong>
+                                        <span>{{ order.payment_method }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="order-main">
+                                        <strong>{{ order.product.name }}</strong>
+                                        <span>{{ order.product.category.name }}</span>
+                                    </div>
+                                </td>
+
+                                <td>{{ order.quantity }}</td>
+
+                                <td>
+                                    <span class="price-text">₹{{ order.total_price }}</span>
+                                </td>
+
+                                <td>
+                                    {% if order.status == "PENDING" %}
+                                        <span class="badge pending">Pending</span>
+                                    {% elif order.status == "CONFIRMED" %}
+                                        <span class="badge confirmed">Confirmed</span>
+                                    {% elif order.status == "PACKED" %}
+                                        <span class="badge packed">Packed</span>
+                                    {% elif order.status == "OUT_FOR_DELIVERY" %}
+                                        <span class="badge delivery">Out for Delivery</span>
+                                    {% elif order.status == "DELIVERED" %}
+                                        <span class="badge delivered">Delivered</span>
+                                    {% elif order.status == "CANCELLED" %}
+                                        <span class="badge cancelled">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge pending">{{ order.status }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <td style="color:#999;font-size:.8rem">
+                                    {{ order.created_at|date:"d M Y" }}
+                                </td>
+
+                                <td>
+                                    <div style="display:flex;justify-content:flex-end">
+                                        <a
+                                            href="{% url 'superadmin_order_detail' order.id %}"
+                                            class="mini-btn view"
+                                        >
+                                            👁️ View
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <div style="font-size:3rem;margin-bottom:12px">📦</div>
+                                        <h3>No Orders Yet</h3>
+                                        <p>This customer has not placed any order yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>

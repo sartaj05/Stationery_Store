@@ -8,7 +8,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from store.forms import CategoryForm, ProductForm, OrderStatusForm
 from store.models import Category, Order, Product
-
+from django.contrib.auth.models import User
+from django.db.models import Q, Count, Sum
+from django.shortcuts import get_object_or_404, redirect, render
 
 def custom_login(request):
     if request.user.is_authenticated:
@@ -89,7 +91,6 @@ def custom_logout(request):
 def is_superadmin(user):
     return user.is_authenticated and user.is_superuser
 
-
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_dashboard(request):
@@ -99,6 +100,12 @@ def superadmin_dashboard(request):
     total_orders = Order.objects.count()
     pending_orders = Order.objects.filter(status="PENDING").count()
     delivered_orders = Order.objects.filter(status="DELIVERED").count()
+
+    total_customers = User.objects.filter(is_superuser=False).count()
+    active_customers = User.objects.filter(
+        is_superuser=False,
+        is_active=True
+    ).count()
 
     latest_orders = (
         Order.objects
@@ -120,12 +127,13 @@ def superadmin_dashboard(request):
         "total_orders": total_orders,
         "pending_orders": pending_orders,
         "delivered_orders": delivered_orders,
+        "total_customers": total_customers,
+        "active_customers": active_customers,
         "latest_orders": latest_orders,
         "low_stock_products": low_stock_products,
     }
 
     return render(request, "accounts/superadmin_dashboard.html", context)
-
 
 @login_required
 @user_passes_test(is_superadmin)
@@ -357,3 +365,94 @@ def superadmin_order_detail(request, pk):
         "order": order,
         "form": form,
     })
+    
+    
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_customer_list(request):
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    customers = (
+        User.objects
+        .filter(is_superuser=False)
+        .annotate(order_count=Count("orders"))
+        .order_by("-date_joined")
+    )
+
+    if query:
+        customers = customers.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query)
+        )
+
+    if status == "active":
+        customers = customers.filter(is_active=True)
+    elif status == "inactive":
+        customers = customers.filter(is_active=False)
+
+    paginator = Paginator(customers, 10)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "page_obj": page_obj,
+        "query": query,
+        "status": status,
+    }
+
+    return render(request, "accounts/superadmin_customer_list.html", context)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_customer_detail(request, pk):
+    customer = get_object_or_404(
+        User.objects.annotate(order_count=Count("orders")),
+        pk=pk,
+        is_superuser=False
+    )
+
+    orders = (
+        Order.objects
+        .select_related("product", "product__category")
+        .filter(customer=customer)
+        .order_by("-created_at")
+    )
+
+    total_spent = 0
+    for order in orders:
+        total_spent += order.total_price()
+
+    pending_orders = orders.filter(status="PENDING").count()
+    delivered_orders = orders.filter(status="DELIVERED").count()
+    cancelled_orders = orders.filter(status="CANCELLED").count()
+
+    context = {
+        "customer": customer,
+        "orders": orders,
+        "total_spent": total_spent,
+        "pending_orders": pending_orders,
+        "delivered_orders": delivered_orders,
+        "cancelled_orders": cancelled_orders,
+    }
+
+    return render(request, "accounts/superadmin_customer_detail.html", context)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_customer_toggle_status(request, pk):
+    customer = get_object_or_404(User, pk=pk, is_superuser=False)
+
+    if request.method == "POST":
+        customer.is_active = not customer.is_active
+        customer.save(update_fields=["is_active"])
+
+        if customer.is_active:
+            messages.success(request, f"{customer.username} has been activated.")
+        else:
+            messages.success(request, f"{customer.username} has been deactivated.")
+
+    return redirect("superadmin_customer_detail", pk=customer.pk)
