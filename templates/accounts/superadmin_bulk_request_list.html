@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Orders | Superadmin | Delhi Stationery</title>
+    <title>Bulk Requests | Superadmin | Delhi Stationery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
@@ -103,17 +103,24 @@
             padding: 24px 32px 32px;
         }
 
-        .order-main strong {
+        .request-main strong {
             display: block;
             font-size: .9rem;
             color: var(--ink);
             margin-bottom: 2px;
         }
 
-        .order-main span {
+        .request-main span {
             display: block;
             color: #999;
             font-size: .76rem;
+        }
+
+        .requirement-preview {
+            max-width: 360px;
+            color: #666;
+            font-size: .84rem;
+            line-height: 1.5;
         }
 
         .badge {
@@ -127,50 +134,29 @@
             white-space: nowrap;
         }
 
-        .badge.pending {
+        .badge.new {
             background: rgba(212,160,23,.14);
             color: #a87900;
         }
 
-        .badge.confirmed {
+        .badge.contacted {
             background: rgba(26,107,107,.12);
             color: var(--teal);
         }
 
-        .badge.packed {
+        .badge.quoted {
             background: rgba(142,68,173,.12);
             color: #8e44ad;
         }
 
-        .badge.out-for-delivery {
-            background: rgba(41,128,185,.12);
-            color: #2980b9;
-        }
-
-        .badge.delivered {
+        .badge.converted {
             background: rgba(39,116,90,.12);
             color: var(--jade);
         }
 
-        .badge.cancelled {
+        .badge.closed {
             background: rgba(192,57,43,.12);
             color: var(--ruby);
-        }
-
-        .badge.cod {
-            background: rgba(26,107,107,.1);
-            color: var(--teal);
-        }
-
-        .badge.upi {
-            background: rgba(232,132,26,.12);
-            color: var(--saffron);
-        }
-
-        .price-text {
-            font-family: 'DM Mono', monospace;
-            font-weight: 600;
-            color: var(--ink);
         }
 
         .mini-btn {
@@ -294,6 +280,10 @@
             .filter-form {
                 grid-template-columns: 1fr;
             }
+
+            .requirement-preview {
+                max-width: 240px;
+            }
         }
     </style>
 </head>
@@ -323,8 +313,8 @@
 
         <header class="dashboard-header">
             <div>
-                <h1>Orders</h1>
-                <p>View and manage customer orders from your custom dashboard.</p>
+                <h1>Bulk Requests</h1>
+                <p>Manage school, office and wholesale stationery enquiries.</p>
             </div>
 
             <a href="{% url 'superadmin_dashboard' %}" class="admin-link">
@@ -342,8 +332,8 @@
 
         <section class="toolbar">
             <div class="toolbar-left">
-                <h2>Order Management</h2>
-                <p>Search orders, filter by status and open order details.</p>
+                <h2>Bulk Order Enquiries</h2>
+                <p>Search requests, filter by status and open details for follow-up.</p>
             </div>
         </section>
 
@@ -357,7 +347,7 @@
                         name="q"
                         value="{{ query|default:'' }}"
                         class="form-control"
-                        placeholder="Search customer name, phone or product..."
+                        placeholder="Search name, phone, organisation or requirement..."
                     >
                 </div>
 
@@ -377,7 +367,7 @@
                     🔍 Search
                 </button>
 
-                <a href="{% url 'superadmin_order_list' %}" class="action-btn light">
+                <a href="{% url 'superadmin_bulk_request_list' %}" class="action-btn light">
                     Reset
                 </a>
 
@@ -387,8 +377,8 @@
         <section class="table-section">
             <div class="panel-card">
                 <div class="panel-header">
-                    <h2>All Orders</h2>
-                    <a href="{% url 'superadmin_dashboard' %}">Back to Dashboard →</a>
+                    <h2>All Bulk Requests</h2>
+                    <a href="{% url 'contact' %}" target="_blank">Public Form →</a>
                 </div>
 
                 <div class="table-wrapper">
@@ -396,10 +386,8 @@
                         <thead>
                             <tr>
                                 <th>Customer</th>
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Total</th>
-                                <th>Payment</th>
+                                <th>Organisation</th>
+                                <th>Requirement</th>
                                 <th>Status</th>
                                 <th>Date</th>
                                 <th style="text-align:right">Action</th>
@@ -407,64 +395,55 @@
                         </thead>
 
                         <tbody>
-                            {% for order in page_obj %}
+                            {% for request_item in page_obj %}
                             <tr>
                                 <td>
-                                    <div class="order-main">
-                                        <strong>{{ order.name }}</strong>
-                                        <span>📞 {{ order.phone }}</span>
+                                    <div class="request-main">
+                                        <strong>{{ request_item.name }}</strong>
+                                        <span>📞 {{ request_item.phone }}</span>
                                     </div>
                                 </td>
 
                                 <td>
-                                    <div class="order-main">
-                                        <strong>{{ order.product.name }}</strong>
-                                        <span>{{ order.product.category.name }}</span>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <span class="badge confirmed">{{ order.quantity }}</span>
-                                </td>
-
-                                <td>
-                                    <span class="price-text">₹{{ order.total_price }}</span>
-                                </td>
-
-                                <td>
-                                    {% if order.payment_method == "COD" %}
-                                        <span class="badge cod">COD</span>
+                                    {% if request_item.organisation %}
+                                        <span style="font-weight:600;color:var(--ink)">
+                                            {{ request_item.organisation }}
+                                        </span>
                                     {% else %}
-                                        <span class="badge upi">UPI</span>
+                                        <span style="color:#aaa">Not provided</span>
                                     {% endif %}
                                 </td>
 
                                 <td>
-                                    {% if order.status == "PENDING" %}
-                                        <span class="badge pending">Pending</span>
-                                    {% elif order.status == "CONFIRMED" %}
-                                        <span class="badge confirmed">Confirmed</span>
-                                    {% elif order.status == "PACKED" %}
-                                        <span class="badge packed">Packed</span>
-                                    {% elif order.status == "OUT_FOR_DELIVERY" %}
-                                        <span class="badge out-for-delivery">Out for Delivery</span>
-                                    {% elif order.status == "DELIVERED" %}
-                                        <span class="badge delivered">Delivered</span>
-                                    {% elif order.status == "CANCELLED" %}
-                                        <span class="badge cancelled">Cancelled</span>
+                                    <div class="requirement-preview">
+                                        {{ request_item.requirement|truncatewords:18 }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if request_item.status == "NEW" %}
+                                        <span class="badge new">New</span>
+                                    {% elif request_item.status == "CONTACTED" %}
+                                        <span class="badge contacted">Contacted</span>
+                                    {% elif request_item.status == "QUOTED" %}
+                                        <span class="badge quoted">Quoted</span>
+                                    {% elif request_item.status == "CONVERTED" %}
+                                        <span class="badge converted">Converted</span>
+                                    {% elif request_item.status == "CLOSED" %}
+                                        <span class="badge closed">Closed</span>
                                     {% else %}
-                                        <span class="badge pending">{{ order.status }}</span>
+                                        <span class="badge new">{{ request_item.status }}</span>
                                     {% endif %}
                                 </td>
 
                                 <td style="color:#999;font-size:.8rem">
-                                    {{ order.created_at|date:"d M Y, h:i A" }}
+                                    {{ request_item.created_at|date:"d M Y, h:i A" }}
                                 </td>
 
                                 <td>
                                     <div style="display:flex;justify-content:flex-end">
                                         <a
-                                            href="{% url 'superadmin_order_detail' order.id %}"
+                                            href="{% url 'superadmin_bulk_request_detail' request_item.id %}"
                                             class="mini-btn view"
                                         >
                                             👁️ View / Update
@@ -474,11 +453,11 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8">
+                                <td colspan="6">
                                     <div class="empty-state">
-                                        <div class="icon">🛒</div>
-                                        <h3>No orders found</h3>
-                                        <p>No customer orders match your current filters.</p>
+                                        <div class="icon">📋</div>
+                                        <h3>No bulk requests found</h3>
+                                        <p>No enquiry matches your current filter. A form with no submissions, the digital equivalent of shouting into a cupboard.</p>
                                     </div>
                                 </td>
                             </tr>

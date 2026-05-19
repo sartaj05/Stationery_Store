@@ -103,8 +103,10 @@
         <nav class="side-menu">
             <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
             <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
-            <a href="{% url 'superadmin_category_list' %}" class="active">🗂️ Categories</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
             <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
+            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
             <a href="{% url 'home' %}">🌐 Visit Website</a>
             <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
         </nav>
