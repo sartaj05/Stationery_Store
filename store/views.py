@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db import transaction
 from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,8 +10,17 @@ from .forms import OrderForm, BulkOrderRequestForm
 
 def home(request):
     categories = Category.objects.all()
-    featured_products = Product.objects.filter(is_active=True, is_featured=True)[:8]
-    latest_products = Product.objects.filter(is_active=True).order_by("-created_at")[:12]
+    featured_products = (
+        Product.objects
+        .filter(is_active=True, is_featured=True)
+        .select_related("category")[:8]
+    )
+    latest_products = (
+        Product.objects
+        .filter(is_active=True)
+        .select_related("category")
+        .order_by("-created_at")[:12]
+    )
 
     context = {
         "categories": categories,
@@ -21,11 +31,11 @@ def home(request):
 
 
 def product_list(request):
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True).select_related("category")
     categories = Category.objects.all()
 
-    query = request.GET.get("q")
-    category_slug = request.GET.get("category")
+    query = request.GET.get("q", "").strip()
+    category_slug = request.GET.get("category", "").strip()
 
     if query:
         products = products.filter(
@@ -47,12 +57,18 @@ def product_list(request):
 
 
 def product_detail(request, product_id):
-    product = get_object_or_404(Product, id=product_id, is_active=True)
+    product = get_object_or_404(
+        Product.objects.select_related("category"),
+        id=product_id,
+        is_active=True,
+    )
 
-    related_products = Product.objects.filter(
-        category=product.category,
-        is_active=True
-    ).exclude(id=product.id)[:4]
+    related_products = (
+        Product.objects
+        .filter(category=product.category, is_active=True)
+        .select_related("category")
+        .exclude(id=product.id)[:4]
+    )
 
     context = {
         "product": product,
@@ -62,7 +78,11 @@ def product_detail(request, product_id):
 
 
 def order_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id, is_active=True)
+    product = get_object_or_404(
+        Product.objects.select_related("category"),
+        id=product_id,
+        is_active=True,
+    )
 
     if product.stock <= 0:
         messages.error(request, "This product is currently out of stock.")
@@ -72,26 +92,40 @@ def order_product(request, product_id):
         form = OrderForm(request.POST)
 
         if form.is_valid():
-            order = form.save(commit=False)
-            order.product = product
+            with transaction.atomic():
+                product_locked = get_object_or_404(
+                    Product.objects.select_for_update().select_related("category"),
+                    id=product_id,
+                    is_active=True,
+                )
 
-            if request.user.is_authenticated:
-                order.customer = request.user
+                order = form.save(commit=False)
+                order.product = product_locked
 
-            if order.quantity > product.stock:
-                messages.error(request, "Quantity is greater than available stock.")
-                return redirect("order_product", product_id=product.id)
+                if request.user.is_authenticated:
+                    order.customer = request.user
 
-            order.save()
+                if product_locked.stock <= 0:
+                    messages.error(request, "This product is currently out of stock.")
+                    return redirect("product_detail", product_id=product_locked.id)
 
-            product.stock -= order.quantity
-            product.save(update_fields=["stock"])
+                if order.quantity > product_locked.stock:
+                    messages.error(
+                        request,
+                        f"Only {product_locked.stock} units are available in stock."
+                    )
+                    return redirect("order_product", product_id=product_locked.id)
+
+                order.save()
+
+                product_locked.stock -= order.quantity
+                product_locked.save(update_fields=["stock"])
 
             messages.success(
                 request,
                 f"Your order has been placed successfully. Your Order ID is #{order.id}."
             )
-            return redirect("order_success")
+            return redirect(f"/order-success/?order_id={order.id}")
 
     else:
         initial_data = {}
@@ -110,7 +144,8 @@ def order_product(request, product_id):
 
 
 def order_success(request):
-    return render(request, "store/order_success.html")
+    order_id = request.GET.get("order_id", "").strip()
+    return render(request, "store/order_success.html", {"order_id": order_id})
 
 
 def track_order(request):

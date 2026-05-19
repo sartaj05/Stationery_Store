@@ -48,7 +48,7 @@
                 {% if product.discount_price %}
                     <del style="font-size:1.1rem">₹{{ product.price }}</del>
                     <span style="background:rgba(232,132,26,.15);color:var(--saffron-dk);padding:4px 12px;border-radius:50px;font-size:.82rem;font-weight:700">
-                        Save ₹{% widthratio product.price 1 1 %}
+                        Save ₹{{ product.discount_amount }}
                     </span>
                 {% endif %}
             </div>

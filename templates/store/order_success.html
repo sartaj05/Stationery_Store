@@ -13,6 +13,12 @@
             Our team will contact you within 2 hours for order confirmation and delivery details.
         </p>
 
+        {% if order_id %}
+            <div style="background:var(--saffron-lt);border:1.5px solid rgba(232,132,26,.24);border-radius:var(--radius-sm);padding:14px 18px;margin:18px 0;color:var(--ink);font-weight:700">
+                🧾 Your Order ID is #{{ order_id }}
+            </div>
+        {% endif %}
+
         <div style="background:var(--teal-lt);border:1.5px solid rgba(26,107,107,.2);border-radius:var(--radius-sm);padding:16px 20px;margin:20px 0;text-align:left;font-size:.875rem;color:var(--teal-dk)">
             <strong>📞 What happens next?</strong>
             <ul style="margin-top:8px;list-style:none;display:flex;flex-direction:column;gap:6px">
@@ -20,12 +26,12 @@
                 <li>📞 Our team will call to confirm delivery time</li>
                 <li>🚚 Product will be dispatched from Delhi store</li>
                 <li>💰 Payment collected on delivery for COD orders</li>
-                <li>📦 You can track your order using your phone number</li>
+                <li>📦 You can track your order using your phone number or Order ID</li>
             </ul>
         </div>
 
         <div class="success-actions">
-            <a href="{% url 'track_order' %}" class="btn primary-btn">📦 Track Order</a>
+            <a href="{% url 'track_order' %}{% if order_id %}?order_id={{ order_id }}{% endif %}" class="btn primary-btn">📦 Track Order</a>
             <a href="{% url 'product_list' %}" class="btn outline-btn">🛒 Continue Shopping</a>
             <a href="{% url 'home' %}" class="btn outline-btn">← Go Home</a>
         </div>
