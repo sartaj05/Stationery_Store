@@ -1,0 +1,728 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .form-wrap {
+            padding: 28px 32px 32px;
+            display: grid;
+            grid-template-columns: 1fr .42fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        .form-card,
+        .help-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .form-card-header,
+        .help-card-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .form-card-header h2,
+        .help-card-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+
+        .form-card-header p,
+        .help-card-header p {
+            color: #999;
+            font-size: .8rem;
+            margin-top: 2px;
+        }
+
+        .form-body,
+        .help-body {
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 7px;
+        }
+
+        .form-control,
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            outline: none;
+            font-size: .9rem;
+            transition: .2s ease;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background: var(--paper-dk);
+        }
+
+        .form-control:focus,
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .check-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .check-card {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .check-card input {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: var(--saffron);
+            flex-shrink: 0;
+        }
+
+        .check-card strong {
+            display: block;
+            color: var(--ink);
+            font-size: .9rem;
+            margin-bottom: 3px;
+        }
+
+        .check-card span {
+            display: block;
+            color: #888;
+            font-size: .78rem;
+            line-height: 1.5;
+        }
+
+        .errorlist {
+            list-style: none;
+            margin: 7px 0 0;
+            padding: 0;
+        }
+
+        .errorlist li,
+        .field-error {
+            color: var(--ruby);
+            font-size: .78rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .non-field-errors {
+            background: rgba(192,57,43,.08);
+            border: 1.5px solid rgba(192,57,43,.18);
+            border-left: 4px solid var(--ruby);
+            color: var(--ruby);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1.5px solid var(--cream);
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 11px 22px;
+            font-size: .86rem;
+            font-weight: 800;
+            transition: .2s ease;
+            white-space: nowrap;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+            box-shadow: 0 4px 16px rgba(232,132,26,.24);
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(232,132,26,.34);
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .action-btn.teal {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .current-image {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .current-image p {
+            color: #999;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .current-image img {
+            width: 160px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+        }
+
+        #imagePreviewBox {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 14px;
+            margin-top: 14px;
+        }
+
+        #imagePreviewBox p {
+            font-size: .72rem;
+            color: #999;
+            margin-bottom: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        #imagePreview {
+            width: 160px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+        }
+
+        .help-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .help-item {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .help-item strong {
+            display: block;
+            color: var(--ink);
+            font-size: .9rem;
+            margin-bottom: 5px;
+        }
+
+        .help-item p {
+            color: #777;
+            font-size: .82rem;
+            line-height: 1.6;
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        .product-preview-card {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-top: 18px;
+        }
+
+        .product-preview-image {
+            height: 170px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            overflow: hidden;
+        }
+
+        .product-preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-preview-body {
+            padding: 16px;
+        }
+
+        .product-preview-body span {
+            display: inline-flex;
+            color: var(--teal);
+            font-size: .74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 6px;
+        }
+
+        .product-preview-body h3 {
+            color: var(--ink);
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .product-preview-body p {
+            color: #777;
+            font-size: .82rem;
+            line-height: 1.6;
+        }
+
+        .price-preview {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-preview strong {
+            color: var(--saffron);
+            font-size: 1.1rem;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .price-preview del {
+            color: #aaa;
+            font-size: .86rem;
+        }
+
+        @media (max-width: 1050px) {
+            .form-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-wrap,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .form-grid,
+            .check-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .action-row {
+                justify-content: stretch;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}" class="active">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
+            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
+            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>{{ title }}</h1>
+                <p>
+                    {% if product %}
+                        Update product information, stock, pricing and visibility.
+                    {% else %}
+                        Add a new stationery product to your public store.
+                    {% endif %}
+                </p>
+            </div>
+
+            <a href="{% url 'superadmin_product_list' %}" class="admin-link">
+                ← Back to Products
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="form-wrap">
+
+            <div class="form-card">
+                <div class="form-card-header">
+                    <div>
+                        <h2>Product Details</h2>
+                        <p>Fill product information carefully. The website will show this publicly.</p>
+                    </div>
+                </div>
+
+                <div class="form-body">
+
+                    {% if form.non_field_errors %}
+                        <div class="non-field-errors">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" data-prevent-double-submit="true">
+                        {% csrf_token %}
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label for="{{ form.category.id_for_label }}">Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="field-error">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.name.id_for_label }}">Product Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="field-error">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.brand.id_for_label }}">Brand</label>
+                                {{ form.brand }}
+                                {% if form.brand.errors %}
+                                    <div class="field-error">{{ form.brand.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.stock.id_for_label }}">Stock Quantity</label>
+                                {{ form.stock }}
+                                {% if form.stock.errors %}
+                                    <div class="field-error">{{ form.stock.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.price.id_for_label }}">Original Price</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="field-error">{{ form.price.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.discount_price.id_for_label }}">Discount Price</label>
+                                {{ form.discount_price }}
+                                {% if form.discount_price.errors %}
+                                    <div class="field-error">{{ form.discount_price.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group full">
+                                <label for="{{ form.description.id_for_label }}">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="field-error">{{ form.description.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group full">
+                                <label for="{{ form.image.id_for_label }}">Product Image</label>
+
+                                {% if product and product.image %}
+                                    <div class="current-image">
+                                        <p>Current Image</p>
+                                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                                    </div>
+                                {% endif %}
+
+                                {{ form.image }}
+
+                                {% if form.image.errors %}
+                                    <div class="field-error">{{ form.image.errors.0 }}</div>
+                                {% endif %}
+
+                                <div id="imagePreviewBox" style="display:none">
+                                    <p>New Image Preview</p>
+                                    <img id="imagePreview" src="" alt="Product preview">
+                                </div>
+                            </div>
+
+                            <div class="form-group full">
+                                <label>Visibility Options</label>
+
+                                <div class="check-row">
+                                    <label class="check-card">
+                                        {{ form.is_featured }}
+                                        <span>
+                                            <strong>Featured Product</strong>
+                                            <span>Show this product in featured section on homepage.</span>
+                                        </span>
+                                    </label>
+
+                                    <label class="check-card">
+                                        {{ form.is_active }}
+                                        <span>
+                                            <strong>Active Product</strong>
+                                            <span>Show this product publicly on the website.</span>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {% if form.is_featured.errors %}
+                                    <div class="field-error">{{ form.is_featured.errors.0 }}</div>
+                                {% endif %}
+
+                                {% if form.is_active.errors %}
+                                    <div class="field-error">{{ form.is_active.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        <div class="action-row">
+                            <a href="{% url 'superadmin_product_list' %}" class="action-btn light">
+                                Cancel
+                            </a>
+
+                            {% if product %}
+                                <a href="{% url 'product_detail' product.id %}" target="_blank" class="action-btn teal">
+                                    👁️ View Public
+                                </a>
+                            {% endif %}
+
+                            <button type="submit" class="action-btn primary">
+                                💾 Save Product
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <aside>
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <div>
+                            <h2>Product Guide</h2>
+                            <p>Small rules. Big difference. Annoying, yes.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-body">
+                        <div class="help-list">
+
+                            <div class="help-item">
+                                <strong>📦 Stock</strong>
+                                <p>
+                                    Stock 0 means out of stock. Stock 1 to 5 will appear in low stock alerts.
+                                </p>
+                            </div>
+
+                            <div class="help-item">
+                                <strong>💰 Discount Price</strong>
+                                <p>
+                                    Discount price must be less than original price. Otherwise the form will reject it, as it should.
+                                </p>
+                            </div>
+
+                            <div class="help-item">
+                                <strong>⭐ Featured</strong>
+                                <p>
+                                    Featured products appear on the homepage featured section.
+                                </p>
+                            </div>
+
+                            <div class="help-item">
+                                <strong>👁️ Active</strong>
+                                <p>
+                                    Inactive products stay saved but are hidden from public product pages.
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                {% if product %}
+                <div class="product-preview-card">
+                    <div class="product-preview-image">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                            📦
+                        {% endif %}
+                    </div>
+
+                    <div class="product-preview-body">
+                        <span>{{ product.category.name }}</span>
+                        <h3>{{ product.name }}</h3>
+
+                        {% if product.description %}
+                            <p>{{ product.description|truncatewords:18 }}</p>
+                        {% else %}
+                            <p>No description added.</p>
+                        {% endif %}
+
+                        <div class="price-preview">
+                            <strong>₹{{ product.final_price }}</strong>
+                            {% if product.discount_price %}
+                                <del>₹{{ product.price }}</del>
+                            {% endif %}
+                        </div>
+
+                        <div style="margin-top:12px;font-size:.82rem;color:#777">
+                            Stock:
+                            <strong style="color:var(--ink)">
+                                {{ product.stock }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </aside>
+
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>
