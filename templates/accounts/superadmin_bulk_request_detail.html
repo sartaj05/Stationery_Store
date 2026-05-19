@@ -1,0 +1,512 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulk Request Detail | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+
+    <style>
+        .detail-wrap {
+            padding: 28px 32px 32px;
+            display: grid;
+            grid-template-columns: 1.35fr .9fr;
+            gap: 22px;
+        }
+
+        .detail-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .detail-card-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .detail-body {
+            padding: 22px 24px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .info-item {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .info-item.full {
+            grid-column: 1 / -1;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: .68rem;
+            color: #999;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 5px;
+        }
+
+        .info-item strong,
+        .info-item span,
+        .info-item p {
+            color: var(--ink);
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
+        .requirement-box {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 14px;
+            padding: 18px;
+            color: var(--ink);
+            line-height: 1.75;
+            white-space: pre-line;
+            font-size: .94rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: .74rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-badge.new {
+            background: rgba(212,160,23,.14);
+            color: #a87900;
+        }
+
+        .status-badge.contacted {
+            background: rgba(26,107,107,.12);
+            color: var(--teal);
+        }
+
+        .status-badge.quoted {
+            background: rgba(142,68,173,.12);
+            color: #8e44ad;
+        }
+
+        .status-badge.converted {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .status-badge.closed {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1.5px solid var(--cream);
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
+            outline: none;
+            font-size: .88rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #999;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 11px 20px;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: .2s ease;
+            white-space: nowrap;
+        }
+
+        .action-btn.primary {
+            background: var(--saffron);
+            color: var(--ink);
+        }
+
+        .action-btn.secondary {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+
+        .action-btn.danger {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        .quick-contact {
+            display: grid;
+            gap: 12px;
+        }
+
+        .timeline-box {
+            display: grid;
+            gap: 12px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            color: #777;
+            font-size: .86rem;
+            line-height: 1.5;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--saffron);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 950px) {
+            .detail-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .detail-wrap,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-item.full {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'superadmin_bulk_request_list' %}" class="active">📋 Bulk Requests</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <h1>Bulk Request Detail</h1>
+                <p>Request from <strong>{{ bulk_request.name }}</strong></p>
+            </div>
+
+            <a href="{% url 'superadmin_bulk_request_list' %}" class="admin-link">
+                ← Back to Requests
+            </a>
+        </header>
+
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="detail-wrap">
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Customer Information</h2>
+
+                    {% if bulk_request.status == "NEW" %}
+                        <span class="status-badge new">New</span>
+                    {% elif bulk_request.status == "CONTACTED" %}
+                        <span class="status-badge contacted">Contacted</span>
+                    {% elif bulk_request.status == "QUOTED" %}
+                        <span class="status-badge quoted">Quoted</span>
+                    {% elif bulk_request.status == "CONVERTED" %}
+                        <span class="status-badge converted">Converted</span>
+                    {% elif bulk_request.status == "CLOSED" %}
+                        <span class="status-badge closed">Closed</span>
+                    {% else %}
+                        <span class="status-badge new">{{ bulk_request.status }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="detail-body">
+                    <div class="info-grid">
+
+                        <div class="info-item">
+                            <label>Customer Name</label>
+                            <strong>{{ bulk_request.name }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Phone Number</label>
+                            <strong>{{ bulk_request.phone }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Organisation</label>
+                            {% if bulk_request.organisation %}
+                                <strong>{{ bulk_request.organisation }}</strong>
+                            {% else %}
+                                <span>Not provided</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="info-item">
+                            <label>Status</label>
+                            <strong>{{ bulk_request.get_status_display }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Created At</label>
+                            <strong>{{ bulk_request.created_at|date:"d M Y, h:i A" }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Last Updated</label>
+                            <strong>{{ bulk_request.updated_at|date:"d M Y, h:i A" }}</strong>
+                        </div>
+
+                        <div class="info-item full">
+                            <label>Requirement</label>
+                            <div class="requirement-box">{{ bulk_request.requirement }}</div>
+                        </div>
+
+                        {% if bulk_request.admin_note %}
+                        <div class="info-item full">
+                            <label>Admin Note</label>
+                            <p>{{ bulk_request.admin_note }}</p>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Update Request</h2>
+                </div>
+
+                <div class="detail-body">
+                    <form method="post" data-prevent-double-submit="true">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label>Status</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <small style="color:var(--ruby)">{{ form.status.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Admin Note</label>
+                            {{ form.admin_note }}
+                            {% if form.admin_note.errors %}
+                                <small style="color:var(--ruby)">{{ form.admin_note.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="action-btn primary" style="width:100%">
+                            💾 Update Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Quick Contact</h2>
+                </div>
+
+                <div class="detail-body">
+                    <div class="quick-contact">
+                        <a
+                            href="tel:{{ bulk_request.phone }}"
+                            class="action-btn secondary"
+                            style="width:100%"
+                        >
+                            📞 Call Customer
+                        </a>
+
+                        <a
+                            href="https://wa.me/91{{ bulk_request.phone }}?text=Hello%20{{ bulk_request.name|urlencode }}%2C%20we%20received%20your%20bulk%20stationery%20request%20on%20Delhi%20Stationery."
+                            target="_blank"
+                            class="action-btn primary"
+                            style="width:100%"
+                        >
+                            💬 WhatsApp Customer
+                        </a>
+
+                        <a
+                            href="{% url 'superadmin_bulk_request_list' %}"
+                            class="action-btn light"
+                            style="width:100%"
+                        >
+                            ← Back to Requests
+                        </a>
+                    </div>
+
+                    <div style="margin-top:18px;background:var(--paper-dk);border:1px solid var(--cream);border-radius:12px;padding:14px;color:#888;font-size:.84rem;line-height:1.6">
+                        Tip: Update status to <strong>Contacted</strong> after calling, <strong>Quoted</strong> after sharing price, and <strong>Converted</strong> if it becomes an actual order. Astounding, a workflow that does not rely on memory and panic.
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <h2>Follow-up Timeline</h2>
+                </div>
+
+                <div class="detail-body">
+                    <div class="timeline-box">
+                        <div class="timeline-item">
+                            <span class="timeline-dot"></span>
+                            <div>
+                                <strong style="color:var(--ink)">Request Created</strong><br>
+                                {{ bulk_request.created_at|date:"d M Y, h:i A" }}
+                            </div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <span class="timeline-dot"></span>
+                            <div>
+                                <strong style="color:var(--ink)">Current Status</strong><br>
+                                {{ bulk_request.get_status_display }}
+                            </div>
+                        </div>
+
+                        <div class="timeline-item">
+                            <span class="timeline-dot"></span>
+                            <div>
+                                <strong style="color:var(--ink)">Last Updated</strong><br>
+                                {{ bulk_request.updated_at|date:"d M Y, h:i A" }}
+                            </div>
+                        </div>
+
+                        {% if bulk_request.admin_note %}
+                        <div class="timeline-item">
+                            <span class="timeline-dot"></span>
+                            <div>
+                                <strong style="color:var(--ink)">Latest Note</strong><br>
+                                {{ bulk_request.admin_note|truncatewords:20 }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>
