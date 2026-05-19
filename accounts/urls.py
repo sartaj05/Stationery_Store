@@ -91,4 +91,15 @@ urlpatterns = [
         views.superadmin_customer_toggle_status,
         name="superadmin_customer_toggle_status"
     ),
+
+    path(
+        "superadmin/low-stock/",
+        views.superadmin_low_stock_list,
+        name="superadmin_low_stock_list"
+    ),
+    path(
+        "superadmin/low-stock/<int:pk>/restock/",
+        views.superadmin_product_restock,
+        name="superadmin_product_restock"
+    ),
 ]

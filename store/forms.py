@@ -154,3 +154,14 @@ class OrderStatusForm(forms.ModelForm):
                 "placeholder": "Internal note for this order"
             }),
         }
+        
+from django import forms        
+class ProductRestockForm(forms.Form):
+    add_stock = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control",
+            "min": 1,
+            "placeholder": "Enter stock quantity"
+        })
+    )

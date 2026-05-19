@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper
 from django.shortcuts import get_object_or_404, redirect, render
 
-from store.forms import CategoryForm, ProductForm, OrderStatusForm
+from store.forms import CategoryForm, ProductForm, OrderStatusForm, ProductRestockForm
 from store.models import Category, Order, Product
 from django.contrib.auth.models import User
 from django.db.models import Q, Count, Sum
@@ -601,3 +601,71 @@ def superadmin_customer_toggle_status(request, pk):
             messages.success(request, f"{customer.username} has been deactivated.")
 
     return redirect("superadmin_customer_detail", pk=customer.pk)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_low_stock_list(request):
+    query = request.GET.get("q", "").strip()
+    stock_filter = request.GET.get("stock", "low").strip()
+
+    products = Product.objects.select_related("category").all()
+
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) |
+            Q(brand__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+    if stock_filter == "out":
+        products = products.filter(stock=0)
+    elif stock_filter == "low":
+        products = products.filter(stock__gt=0, stock__lte=5)
+    elif stock_filter == "all-alerts":
+        products = products.filter(stock__lte=5)
+    else:
+        products = products.filter(stock__lte=5)
+
+    products = products.order_by("stock", "name")
+
+    low_stock_count = Product.objects.filter(stock__gt=0, stock__lte=5).count()
+    out_of_stock_count = Product.objects.filter(stock=0).count()
+    total_alert_count = Product.objects.filter(stock__lte=5).count()
+
+    paginator = Paginator(products, 10)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "page_obj": page_obj,
+        "query": query,
+        "stock_filter": stock_filter,
+        "low_stock_count": low_stock_count,
+        "out_of_stock_count": out_of_stock_count,
+        "total_alert_count": total_alert_count,
+    }
+
+    return render(request, "accounts/superadmin_low_stock_list.html", context)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_product_restock(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == "POST":
+        form = ProductRestockForm(request.POST)
+
+        if form.is_valid():
+            add_stock = form.cleaned_data["add_stock"]
+            product.stock += add_stock
+            product.save(update_fields=["stock"])
+
+            messages.success(
+                request,
+                f"{add_stock} units added to {product.name}. Current stock: {product.stock}."
+            )
+        else:
+            messages.error(request, "Please enter a valid stock quantity.")
+
+    return redirect("superadmin_low_stock_list")

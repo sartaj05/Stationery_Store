@@ -342,12 +342,13 @@
         </div>
 
         <nav class="side-menu">
-            <a href="{% url 'superadmin_dashboard' %}" class="active">📊 Dashboard</a>
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
             <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
             <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
             <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
             <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
             <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
+            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
             <a href="{% url 'home' %}">🌐 Visit Website</a>
             <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
         </nav>
@@ -686,7 +687,7 @@
             <div class="panel-card">
                 <div class="panel-header">
                     <h2>⚠️ Low Stock</h2>
-                    <a href="{% url 'superadmin_product_list' %}?stock=low">Manage →</a>
+                    <a href="{% url 'superadmin_low_stock_list' %}">Manage →</a>
                 </div>
 
                 <div class="low-stock-list">
