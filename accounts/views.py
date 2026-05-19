@@ -3,14 +3,23 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper
-from django.shortcuts import get_object_or_404, redirect, render
-
-from store.forms import CategoryForm, ProductForm, OrderStatusForm, ProductRestockForm
-from store.models import Category, Order, Product
-from django.contrib.auth.models import User
 from django.db.models import Q, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from store.forms import (
+    CategoryForm,
+    ProductForm,
+    OrderStatusForm,
+    ProductRestockForm,
+    BulkOrderStatusForm,
+)
+from store.models import Category, Order, Product, BulkOrderRequest
+
+
+# ===============================
+# AUTH VIEWS
+# ===============================
 
 def custom_login(request):
     if request.user.is_authenticated:
@@ -69,11 +78,11 @@ def signup(request):
             messages.error(request, "Email already exists.")
             return redirect("signup")
 
-        user = User.objects.create_user(
+        User.objects.create_user(
             username=username,
             email=email,
             password=password,
-            first_name=full_name
+            first_name=full_name,
         )
 
         messages.success(request, "Account created successfully. Please login.")
@@ -92,12 +101,13 @@ def is_superadmin(user):
     return user.is_authenticated and user.is_superuser
 
 
-from django.utils import timezone
+# ===============================
+# SUPERADMIN DASHBOARD
+# ===============================
+
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_dashboard(request):
-    from django.db.models import Count
-
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
     total_categories = Category.objects.count()
@@ -113,7 +123,7 @@ def superadmin_dashboard(request):
     total_customers = User.objects.filter(is_superuser=False).count()
     active_customers = User.objects.filter(
         is_superuser=False,
-        is_active=True
+        is_active=True,
     ).count()
 
     low_stock_count = Product.objects.filter(stock__lte=5).count()
@@ -132,17 +142,23 @@ def superadmin_dashboard(request):
         .order_by("stock")[:10]
     )
 
-    # Revenue estimate from delivered + confirmed-style orders.
-    # We calculate in Python because total_price() is a method.
-    revenue_orders = Order.objects.select_related("product").exclude(status="CANCELLED")
-    estimated_revenue = 0
+    revenue_orders = (
+        Order.objects
+        .select_related("product")
+        .exclude(status="CANCELLED")
+    )
 
+    estimated_revenue = 0
     for order in revenue_orders:
         estimated_revenue += order.total_price()
 
-    delivered_revenue = 0
-    delivered_revenue_orders = Order.objects.select_related("product").filter(status="DELIVERED")
+    delivered_revenue_orders = (
+        Order.objects
+        .select_related("product")
+        .filter(status="DELIVERED")
+    )
 
+    delivered_revenue = 0
     for order in delivered_revenue_orders:
         delivered_revenue += order.total_price()
 
@@ -179,18 +195,21 @@ def superadmin_dashboard(request):
     max_top_quantity = 1
 
     for item in top_products_raw:
-        if item["total_quantity"] > max_top_quantity:
-            max_top_quantity = item["total_quantity"]
+        quantity = item["total_quantity"] or 0
+
+        if quantity > max_top_quantity:
+            max_top_quantity = quantity
 
     for item in top_products_raw:
+        quantity = item["total_quantity"] or 0
+
         top_products.append({
             "id": item["product__id"],
             "name": item["product__name"],
-            "count": item["total_quantity"],
-            "percent": round((item["total_quantity"] / max_top_quantity) * 100),
+            "count": quantity,
+            "percent": round((quantity / max_top_quantity) * 100) if max_top_quantity else 0,
         })
 
-    # Last 6 months order chart
     today = timezone.now().date()
     monthly_orders = []
 
@@ -206,7 +225,7 @@ def superadmin_dashboard(request):
 
         month_count = Order.objects.filter(
             created_at__year=year,
-            created_at__month=month
+            created_at__month=month,
         ).count()
 
         monthly_orders.append({
@@ -215,24 +234,15 @@ def superadmin_dashboard(request):
         })
 
     max_month_count = max([item["count"] for item in monthly_orders], default=1)
+
     if max_month_count <= 0:
         max_month_count = 1
 
     for item in monthly_orders:
         item["percent"] = round((item["count"] / max_month_count) * 100)
 
-    # Bulk request stats if BulkOrderRequest model exists in your project
-    total_bulk_requests = 0
-    new_bulk_requests = 0
-
-    try:
-        from store.models import BulkOrderRequest
-
-        total_bulk_requests = BulkOrderRequest.objects.count()
-        new_bulk_requests = BulkOrderRequest.objects.filter(status="NEW").count()
-    except Exception:
-        total_bulk_requests = 0
-        new_bulk_requests = 0
+    total_bulk_requests = BulkOrderRequest.objects.count()
+    new_bulk_requests = BulkOrderRequest.objects.filter(status="NEW").count()
 
     context = {
         "total_products": total_products,
@@ -279,6 +289,12 @@ def superadmin_dashboard(request):
     }
 
     return render(request, "accounts/superadmin_dashboard.html", context)
+
+
+# ===============================
+# CATEGORY MANAGEMENT
+# ===============================
+
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_category_list(request):
@@ -299,6 +315,7 @@ def superadmin_category_list(request):
         "page_obj": page_obj,
         "query": query,
     })
+
 
 @login_required
 @user_passes_test(is_superadmin)
@@ -357,6 +374,10 @@ def superadmin_category_delete(request, pk):
         "title": "Delete Category",
     })
 
+
+# ===============================
+# PRODUCT MANAGEMENT
+# ===============================
 
 @login_required
 @user_passes_test(is_superadmin)
@@ -457,13 +478,17 @@ def superadmin_product_delete(request, pk):
     })
 
 
+# ===============================
+# ORDER MANAGEMENT
+# ===============================
+
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_order_list(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
-    orders = Order.objects.select_related("product").all()
+    orders = Order.objects.select_related("product", "product__category").all()
 
     if query:
         orders = orders.filter(
@@ -491,7 +516,7 @@ def superadmin_order_list(request):
 def superadmin_order_detail(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("product", "product__category"),
-        pk=pk
+        pk=pk,
     )
 
     if request.method == "POST":
@@ -508,8 +533,71 @@ def superadmin_order_detail(request, pk):
         "order": order,
         "form": form,
     })
-    
-    
+
+
+# ===============================
+# BULK REQUEST MANAGEMENT
+# ===============================
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_bulk_request_list(request):
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    bulk_requests = BulkOrderRequest.objects.all()
+
+    if query:
+        bulk_requests = bulk_requests.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(organisation__icontains=query) |
+            Q(requirement__icontains=query)
+        )
+
+    if status:
+        bulk_requests = bulk_requests.filter(status=status)
+
+    paginator = Paginator(bulk_requests, 10)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "page_obj": page_obj,
+        "query": query,
+        "status": status,
+        "status_choices": BulkOrderRequest.STATUS_CHOICES,
+    }
+
+    return render(request, "accounts/superadmin_bulk_request_list.html", context)
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_bulk_request_detail(request, pk):
+    bulk_request = get_object_or_404(BulkOrderRequest, pk=pk)
+
+    if request.method == "POST":
+        form = BulkOrderStatusForm(request.POST, instance=bulk_request)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Bulk request updated successfully.")
+            return redirect("superadmin_bulk_request_detail", pk=bulk_request.pk)
+    else:
+        form = BulkOrderStatusForm(instance=bulk_request)
+
+    context = {
+        "bulk_request": bulk_request,
+        "form": form,
+    }
+
+    return render(request, "accounts/superadmin_bulk_request_detail.html", context)
+
+
+# ===============================
+# CUSTOMER MANAGEMENT
+# ===============================
+
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_customer_list(request):
@@ -554,7 +642,7 @@ def superadmin_customer_detail(request, pk):
     customer = get_object_or_404(
         User.objects.annotate(order_count=Count("orders")),
         pk=pk,
-        is_superuser=False
+        is_superuser=False,
     )
 
     orders = (
@@ -600,6 +688,10 @@ def superadmin_customer_toggle_status(request, pk):
 
     return redirect("superadmin_customer_detail", pk=customer.pk)
 
+
+# ===============================
+# LOW STOCK MANAGEMENT
+# ===============================
 
 @login_required
 @user_passes_test(is_superadmin)
