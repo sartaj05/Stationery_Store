@@ -3,22 +3,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title }} | Superadmin</title>
+    <title>{{ title }} | Superadmin | Delhi Stationery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
 
     <style>
         .form-wrap {
-            padding: 28px 32px;
-            max-width: 760px;
+            padding: 28px 32px 32px;
+            display: grid;
+            grid-template-columns: 1fr .42fr;
+            gap: 22px;
+            align-items: start;
         }
 
-        .form-card {
+        .form-card,
+        .help-card {
             background: #fff;
             border: 1.5px solid var(--cream);
             border-radius: 14px;
-            padding: 28px;
+            overflow: hidden;
+        }
+
+        .form-card-header,
+        .help-card-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+        }
+
+        .form-card-header h2,
+        .help-card-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+
+        .form-card-header p,
+        .help-card-header p {
+            color: #999;
+            font-size: .8rem;
+            margin-top: 2px;
+        }
+
+        .form-body,
+        .help-body {
+            padding: 24px;
         }
 
         .form-group {
@@ -27,66 +56,176 @@
 
         .form-group label {
             display: block;
-            font-size: .78rem;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 7px;
-            letter-spacing: .06em;
+            font-size: .72rem;
+            font-weight: 800;
+            color: #999;
             text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 7px;
         }
 
-        .form-control {
+        .form-control,
+        input[type="text"] {
             width: 100%;
-            padding: 12px 14px;
             border: 1.5px solid var(--cream);
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: .9rem;
+            background: #fff;
+            border-radius: 10px;
+            padding: 11px 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--ink);
             outline: none;
+            font-size: .9rem;
+            transition: .2s ease;
         }
 
-        .form-control:focus {
+        .form-control:focus,
+        input[type="text"]:focus {
             border-color: var(--saffron);
-            box-shadow: 0 0 0 3px rgba(232,132,26,.12);
+            box-shadow: 0 0 0 3px rgba(232,132,26,.13);
+        }
+
+        .field-error,
+        .errorlist li {
+            color: var(--ruby);
+            font-size: .78rem;
+            font-weight: 600;
+            margin-top: 6px;
         }
 
         .errorlist {
             list-style: none;
-            margin-top: 6px;
-            color: var(--ruby);
-            font-size: .82rem;
+            padding: 0;
+            margin: 7px 0 0;
         }
 
-        .btn-row {
+        .action-row {
             display: flex;
             gap: 12px;
+            justify-content: flex-end;
             flex-wrap: wrap;
-            margin-top: 22px;
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1.5px solid var(--cream);
         }
 
-        .btn {
+        .action-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 11px 20px;
-            border-radius: 50px;
+            gap: 8px;
             border: none;
-            text-decoration: none;
-            font-size: .85rem;
-            font-weight: 700;
             cursor: pointer;
-            font-family: inherit;
+            text-decoration: none;
+            border-radius: 50px;
+            padding: 11px 22px;
+            font-size: .86rem;
+            font-weight: 800;
+            transition: .2s ease;
+            white-space: nowrap;
+            font-family: 'DM Sans', sans-serif;
         }
 
-        .btn-primary {
+        .action-btn.primary {
             background: var(--saffron);
             color: var(--ink);
         }
 
-        .btn-light {
+        .action-btn.light {
             background: var(--paper-dk);
             color: var(--ink);
             border: 1.5px solid var(--cream);
+        }
+
+        .preview-card {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .preview-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+        }
+
+        .preview-card h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.25rem;
+            margin-bottom: 6px;
+        }
+
+        .preview-card p {
+            color: #888;
+            font-size: .84rem;
+        }
+
+        .help-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .help-item {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .help-item strong {
+            display: block;
+            color: var(--ink);
+            font-size: .9rem;
+            margin-bottom: 5px;
+        }
+
+        .help-item p {
+            color: #777;
+            font-size: .82rem;
+            line-height: 1.6;
+        }
+
+        .messages-wrap {
+            padding: 18px 32px 0;
+        }
+
+        .dash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .86rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            background: #fff;
+        }
+
+        .dash-msg.success {
+            border-color: var(--jade);
+            color: var(--jade);
+        }
+
+        .dash-msg.error {
+            border-color: var(--ruby);
+            color: var(--ruby);
+        }
+
+        @media (max-width: 950px) {
+            .form-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-wrap,
+            .messages-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -103,7 +242,7 @@
         <nav class="side-menu">
             <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
             <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
-            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_category_list' %}" class="active">🗂️ Categories</a>
             <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
             <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
             <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
@@ -118,56 +257,165 @@
         <header class="dashboard-header">
             <div>
                 <h1>{{ title }}</h1>
-                <p>Create or update category details.</p>
+                <p>Create and manage product categories for public browsing.</p>
             </div>
-            <a href="{% url 'superadmin_category_list' %}" class="admin-link">← Back</a>
+
+            <a href="{% url 'superadmin_category_list' %}" class="admin-link">
+                ← Back to Categories
+            </a>
         </header>
 
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="dash-msg {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <section class="form-wrap">
+
             <div class="form-card">
-                <form method="post">
-                    {% csrf_token %}
+                <div class="form-card-header">
+                    <h2>Category Details</h2>
+                    <p>Use clean category names and readable slugs.</p>
+                </div>
 
-                    {% if form.non_field_errors %}
-                        <div style="background:#fdf0ef;color:var(--ruby);padding:12px 16px;border-radius:8px;margin-bottom:18px">
-                            {{ form.non_field_errors }}
+                <div class="form-body">
+                    <form method="post" data-prevent-double-submit="true">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Category Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="field-error">{{ form.name.errors.0 }}</div>
+                            {% endif %}
                         </div>
-                    {% endif %}
 
-                    <div class="form-group">
-                        <label>Category Name</label>
-                        {{ form.name }}
-                        {{ form.name.errors }}
-                    </div>
+                        <div class="form-group">
+                            <label for="{{ form.slug.id_for_label }}">Slug</label>
+                            {{ form.slug }}
+                            {% if form.slug.errors %}
+                                <div class="field-error">{{ form.slug.errors.0 }}</div>
+                            {% endif %}
+                        </div>
 
-                    <div class="form-group">
-                        <label>Slug</label>
-                        {{ form.slug }}
-                        {{ form.slug.errors }}
-                        <p style="font-size:.78rem;color:#999;margin-top:6px">
-                            Example: notebooks, office-supplies, exam-materials
-                        </p>
-                    </div>
+                        <div class="form-group">
+                            <label for="{{ form.icon.id_for_label }}">Icon</label>
+                            {{ form.icon }}
+                            {% if form.icon.errors %}
+                                <div class="field-error">{{ form.icon.errors.0 }}</div>
+                            {% endif %}
+                        </div>
 
-                    <div class="form-group">
-                        <label>Icon</label>
-                        {{ form.icon }}
-                        {{ form.icon.errors }}
-                        <p style="font-size:.78rem;color:#999;margin-top:6px">
-                            Example: 📚 ✏️ 📒 🖊️ 📐
-                        </p>
-                    </div>
+                        <div class="action-row">
+                            <a href="{% url 'superadmin_category_list' %}" class="action-btn light">
+                                Cancel
+                            </a>
 
-                    <div class="btn-row">
-                        <button type="submit" class="btn btn-primary">💾 Save Category</button>
-                        <a href="{% url 'superadmin_category_list' %}" class="btn btn-light">Cancel</a>
-                    </div>
-                </form>
+                            <button type="submit" class="action-btn primary">
+                                💾 Save Category
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
+            <aside>
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <h2>Preview</h2>
+                        <p>How this category will feel on public pages.</p>
+                    </div>
+
+                    <div class="help-body">
+                        <div class="preview-card">
+                            <div class="preview-icon" id="categoryIconPreview">
+                                {% if category and category.icon %}
+                                    {{ category.icon }}
+                                {% else %}
+                                    📦
+                                {% endif %}
+                            </div>
+
+                            <h3 id="categoryNamePreview">
+                                {% if category %}
+                                    {{ category.name }}
+                                {% else %}
+                                    Category Name
+                                {% endif %}
+                            </h3>
+
+                            <p id="categorySlugPreview">
+                                {% if category %}
+                                    /products/?category={{ category.slug }}
+                                {% else %}
+                                    /products/?category=category-slug
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="help-list" style="margin-top:18px">
+                            <div class="help-item">
+                                <strong>🏷️ Name</strong>
+                                <p>Example: Notebooks, Pens, Office Supplies, Exam Materials.</p>
+                            </div>
+
+                            <div class="help-item">
+                                <strong>🔗 Slug</strong>
+                                <p>Auto-generated from name. Keep it lowercase and URL friendly.</p>
+                            </div>
+
+                            <div class="help-item">
+                                <strong>✨ Icon</strong>
+                                <p>Use one emoji icon. Too many icons turn UI into a circus tent.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
         </section>
 
     </main>
 </div>
+
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const nameInput = document.querySelector("input[name='name']");
+        const slugInput = document.querySelector("input[name='slug']");
+        const iconInput = document.querySelector("input[name='icon']");
+
+        const namePreview = document.getElementById("categoryNamePreview");
+        const slugPreview = document.getElementById("categorySlugPreview");
+        const iconPreview = document.getElementById("categoryIconPreview");
+
+        function updatePreview() {
+            if (nameInput && namePreview) {
+                namePreview.textContent = nameInput.value.trim() || "Category Name";
+            }
+
+            if (slugInput && slugPreview) {
+                slugPreview.textContent = "/products/?category=" + (slugInput.value.trim() || "category-slug");
+            }
+
+            if (iconInput && iconPreview) {
+                iconPreview.textContent = iconInput.value.trim() || "📦";
+            }
+        }
+
+        [nameInput, slugInput, iconInput].forEach(function (input) {
+            if (input) {
+                input.addEventListener("input", updatePreview);
+            }
+        });
+
+        updatePreview();
+    });
+</script>
 
 </body>
 </html>

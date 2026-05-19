@@ -279,13 +279,12 @@ def superadmin_dashboard(request):
     }
 
     return render(request, "accounts/superadmin_dashboard.html", context)
-
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_category_list(request):
     query = request.GET.get("q", "").strip()
 
-    categories = Category.objects.all()
+    categories = Category.objects.prefetch_related("products").all()
 
     if query:
         categories = categories.filter(
@@ -300,7 +299,6 @@ def superadmin_category_list(request):
         "page_obj": page_obj,
         "query": query,
     })
-
 
 @login_required
 @user_passes_test(is_superadmin)
