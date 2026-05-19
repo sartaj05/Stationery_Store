@@ -91,21 +91,33 @@ def custom_logout(request):
 def is_superadmin(user):
     return user.is_authenticated and user.is_superuser
 
+
+from django.utils import timezone
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_dashboard(request):
+    from django.db.models import Count
+
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
     total_categories = Category.objects.count()
+
     total_orders = Order.objects.count()
     pending_orders = Order.objects.filter(status="PENDING").count()
+    confirmed_orders = Order.objects.filter(status="CONFIRMED").count()
+    packed_orders = Order.objects.filter(status="PACKED").count()
+    out_for_delivery_orders = Order.objects.filter(status="OUT_FOR_DELIVERY").count()
     delivered_orders = Order.objects.filter(status="DELIVERED").count()
+    cancelled_orders = Order.objects.filter(status="CANCELLED").count()
 
     total_customers = User.objects.filter(is_superuser=False).count()
     active_customers = User.objects.filter(
         is_superuser=False,
         is_active=True
     ).count()
+
+    low_stock_count = Product.objects.filter(stock__lte=5).count()
+    out_of_stock_count = Product.objects.filter(stock=0).count()
 
     latest_orders = (
         Order.objects
@@ -120,15 +132,148 @@ def superadmin_dashboard(request):
         .order_by("stock")[:10]
     )
 
+    # Revenue estimate from delivered + confirmed-style orders.
+    # We calculate in Python because total_price() is a method.
+    revenue_orders = Order.objects.select_related("product").exclude(status="CANCELLED")
+    estimated_revenue = 0
+
+    for order in revenue_orders:
+        estimated_revenue += order.total_price()
+
+    delivered_revenue = 0
+    delivered_revenue_orders = Order.objects.select_related("product").filter(status="DELIVERED")
+
+    for order in delivered_revenue_orders:
+        delivered_revenue += order.total_price()
+
+    cod_orders = Order.objects.filter(payment_method="COD").count()
+    upi_orders = Order.objects.filter(payment_method="UPI").count()
+
+    if total_orders > 0:
+        pending_percent = round((pending_orders / total_orders) * 100)
+        confirmed_percent = round((confirmed_orders / total_orders) * 100)
+        packed_percent = round((packed_orders / total_orders) * 100)
+        out_for_delivery_percent = round((out_for_delivery_orders / total_orders) * 100)
+        delivered_percent = round((delivered_orders / total_orders) * 100)
+        cancelled_percent = round((cancelled_orders / total_orders) * 100)
+        cod_percent = round((cod_orders / total_orders) * 100)
+        upi_percent = round((upi_orders / total_orders) * 100)
+    else:
+        pending_percent = 0
+        confirmed_percent = 0
+        packed_percent = 0
+        out_for_delivery_percent = 0
+        delivered_percent = 0
+        cancelled_percent = 0
+        cod_percent = 0
+        upi_percent = 0
+
+    top_products_raw = (
+        Order.objects
+        .values("product__id", "product__name")
+        .annotate(total_quantity=Sum("quantity"))
+        .order_by("-total_quantity")[:5]
+    )
+
+    top_products = []
+    max_top_quantity = 1
+
+    for item in top_products_raw:
+        if item["total_quantity"] > max_top_quantity:
+            max_top_quantity = item["total_quantity"]
+
+    for item in top_products_raw:
+        top_products.append({
+            "id": item["product__id"],
+            "name": item["product__name"],
+            "count": item["total_quantity"],
+            "percent": round((item["total_quantity"] / max_top_quantity) * 100),
+        })
+
+    # Last 6 months order chart
+    today = timezone.now().date()
+    monthly_orders = []
+
+    for month_back in range(5, -1, -1):
+        month_date = today.replace(day=1)
+
+        year = month_date.year
+        month = month_date.month - month_back
+
+        while month <= 0:
+            month += 12
+            year -= 1
+
+        month_count = Order.objects.filter(
+            created_at__year=year,
+            created_at__month=month
+        ).count()
+
+        monthly_orders.append({
+            "label": f"{month:02d}/{str(year)[-2:]}",
+            "count": month_count,
+        })
+
+    max_month_count = max([item["count"] for item in monthly_orders], default=1)
+    if max_month_count <= 0:
+        max_month_count = 1
+
+    for item in monthly_orders:
+        item["percent"] = round((item["count"] / max_month_count) * 100)
+
+    # Bulk request stats if BulkOrderRequest model exists in your project
+    total_bulk_requests = 0
+    new_bulk_requests = 0
+
+    try:
+        from store.models import BulkOrderRequest
+
+        total_bulk_requests = BulkOrderRequest.objects.count()
+        new_bulk_requests = BulkOrderRequest.objects.filter(status="NEW").count()
+    except Exception:
+        total_bulk_requests = 0
+        new_bulk_requests = 0
+
     context = {
         "total_products": total_products,
         "active_products": active_products,
         "total_categories": total_categories,
+
         "total_orders": total_orders,
         "pending_orders": pending_orders,
+        "confirmed_orders": confirmed_orders,
+        "packed_orders": packed_orders,
+        "out_for_delivery_orders": out_for_delivery_orders,
         "delivered_orders": delivered_orders,
+        "cancelled_orders": cancelled_orders,
+
+        "pending_percent": pending_percent,
+        "confirmed_percent": confirmed_percent,
+        "packed_percent": packed_percent,
+        "out_for_delivery_percent": out_for_delivery_percent,
+        "delivered_percent": delivered_percent,
+        "cancelled_percent": cancelled_percent,
+
         "total_customers": total_customers,
         "active_customers": active_customers,
+
+        "low_stock_count": low_stock_count,
+        "out_of_stock_count": out_of_stock_count,
+
+        "estimated_revenue": estimated_revenue,
+        "delivered_revenue": delivered_revenue,
+
+        "cod_orders": cod_orders,
+        "upi_orders": upi_orders,
+        "cod_percent": cod_percent,
+        "upi_percent": upi_percent,
+
+        "top_products": top_products,
+        "monthly_orders": monthly_orders,
+
+        "total_bulk_requests": total_bulk_requests,
+        "new_bulk_requests": new_bulk_requests,
+
         "latest_orders": latest_orders,
         "low_stock_products": low_stock_products,
     }

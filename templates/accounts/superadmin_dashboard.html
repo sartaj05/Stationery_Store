@@ -9,7 +9,223 @@
     <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
 
     <style>
-        .action-row {
+        .analytics-section {
+            padding: 24px 32px 0;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1.15fr .85fr;
+            gap: 20px;
+        }
+
+        .analytics-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .analytics-header {
+            padding: 18px 24px;
+            border-bottom: 1.5px solid var(--cream);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .analytics-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .analytics-header span {
+            color: #999;
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .analytics-body {
+            padding: 22px 24px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            padding: 24px 32px 0;
+        }
+
+        .metric-card {
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .metric-card h3 {
+            color: #999;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .metric-card strong {
+            display: block;
+            font-family: 'DM Mono', monospace;
+            font-size: 1.65rem;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .metric-card p {
+            color: #aaa;
+            font-size: .78rem;
+            margin-top: 8px;
+        }
+
+        .metric-card.revenue strong {
+            color: var(--jade);
+        }
+
+        .metric-card.warning strong {
+            color: var(--gold);
+        }
+
+        .metric-card.danger strong {
+            color: var(--ruby);
+        }
+
+        .metric-card.info strong {
+            color: var(--teal);
+        }
+
+        .bar-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .bar-item {
+            display: grid;
+            gap: 7px;
+        }
+
+        .bar-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--ink);
+            font-size: .86rem;
+            font-weight: 700;
+        }
+
+        .bar-top span:last-child {
+            font-family: 'DM Mono', monospace;
+            color: #999;
+        }
+
+        .bar-track {
+            height: 10px;
+            background: var(--paper-dk);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--cream);
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--saffron);
+            border-radius: 999px;
+        }
+
+        .bar-fill.teal {
+            background: var(--teal);
+        }
+
+        .bar-fill.green {
+            background: var(--jade);
+        }
+
+        .bar-fill.red {
+            background: var(--ruby);
+        }
+
+        .bar-fill.purple {
+            background: #8e44ad;
+        }
+
+        .monthly-chart {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 12px;
+            height: 220px;
+            padding-top: 10px;
+        }
+
+        .month-bar {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .month-bar strong {
+            color: var(--ink);
+            font-family: 'DM Mono', monospace;
+            font-size: .85rem;
+        }
+
+        .month-column {
+            width: 100%;
+            min-height: 8px;
+            background: linear-gradient(180deg, var(--saffron), #c86d0d);
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 8px 16px rgba(232,132,26,.16);
+        }
+
+        .month-bar span {
+            color: #999;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .payment-card {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .payment-card h3 {
+            color: #999;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 8px;
+        }
+
+        .payment-card strong {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.55rem;
+            color: var(--ink);
+        }
+
+        .quick-actions {
             padding: 20px 32px 0;
             display: flex;
             gap: 12px;
@@ -20,15 +236,15 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 20px;
+            text-decoration: none;
             border-radius: 50px;
+            padding: 10px 18px;
             font-size: .82rem;
             font-weight: 700;
-            text-decoration: none;
             transition: .2s ease;
         }
 
-        .quick-btn.orange {
+        .quick-btn.primary {
             background: var(--saffron);
             color: var(--ink);
         }
@@ -39,9 +255,13 @@
         }
 
         .quick-btn.light {
-            background: var(--paper-dk);
+            background: #fff;
             color: var(--ink);
             border: 1.5px solid var(--cream);
+        }
+
+        .quick-btn:hover {
+            transform: translateY(-2px);
         }
 
         .status-pill {
@@ -49,14 +269,66 @@
             padding: 4px 10px;
             border-radius: 50px;
             font-size: .72rem;
-            font-weight: 700;
-            background: var(--paper-dk);
+            font-weight: 800;
         }
 
-        .status-pending { color: var(--gold); }
-        .status-confirmed { color: var(--teal); }
-        .status-delivered { color: var(--jade); }
-        .status-cancelled { color: var(--ruby); }
+        .status-pill.pending {
+            background: rgba(212,160,23,.14);
+            color: #a87900;
+        }
+
+        .status-pill.confirmed {
+            background: rgba(26,107,107,.12);
+            color: var(--teal);
+        }
+
+        .status-pill.delivered {
+            background: rgba(39,116,90,.12);
+            color: var(--jade);
+        }
+
+        .status-pill.cancelled {
+            background: rgba(192,57,43,.12);
+            color: var(--ruby);
+        }
+
+        .status-pill.other {
+            background: var(--paper-dk);
+            color: #777;
+        }
+
+        @media (max-width: 1150px) {
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metric-grid,
+            .analytics-section,
+            .quick-actions,
+            .stats-grid,
+            .content-grid {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .payment-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .monthly-chart {
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -70,7 +342,7 @@
         </div>
 
         <nav class="side-menu">
-            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_dashboard' %}" class="active">📊 Dashboard</a>
             <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
             <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
             <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
@@ -88,19 +360,10 @@
                 <h1>Dashboard</h1>
                 <p>Welcome back, <strong>{{ request.user.username }}</strong> 👋</p>
             </div>
-            <a href="{% url 'home' %}" class="admin-link">🌐 Website</a>
+            <a href="{% url 'home' %}" class="admin-link">🌐 Visit Website</a>
         </header>
 
-        {% if messages %}
-            <div style="padding:20px 32px 0">
-                {% for message in messages %}
-                    <div class="msg {{ message.tags }}" style="background:#fff;border-left:4px solid var(--teal);padding:12px 16px;border-radius:8px;margin-bottom:10px">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
+        <!-- Main Stats -->
         <section class="stats-grid">
             <div class="stat-card blue">
                 <h3>Total Products</h3>
@@ -113,45 +376,240 @@
             </div>
 
             <div class="stat-card purple">
-                <h3>Categories</h3>
-                <h2>{{ total_categories }}</h2>
-            </div>
-
-            <div class="stat-card orange">
                 <h3>Total Orders</h3>
                 <h2>{{ total_orders }}</h2>
             </div>
-        </section>
 
-        <section class="stats-grid" style="padding-top:20px">
             <div class="stat-card orange">
-                <h3>Pending Orders</h3>
-                <h2>{{ pending_orders }}</h2>
-            </div>
-
-            <div class="stat-card green">
-                <h3>Delivered Orders</h3>
-                <h2>{{ delivered_orders }}</h2>
-            </div>
-
-            <div class="stat-card blue">
-                <h3>Low Stock Alert</h3>
-                <h2>{{ low_stock_products|length }}</h2>
-            </div>
-
-            <div class="stat-card purple">
-                <h3>Store Mode</h3>
-                <h2 style="font-size:1.4rem">LIVE</h2>
+                <h3>Customers</h3>
+                <h2>{{ total_customers }}</h2>
             </div>
         </section>
 
-        <div class="action-row">
-            <a href="{% url 'superadmin_product_create' %}" class="quick-btn orange">➕ Add Product</a>
-            <a href="{% url 'superadmin_category_create' %}" class="quick-btn teal">➕ Add Category</a>
-            <a href="{% url 'superadmin_order_list' %}" class="quick-btn light">📋 View Orders</a>
-            <a href="{% url 'product_list' %}" class="quick-btn light">🛍️ Public Products</a>
-        </div>
+        <!-- Revenue / Alerts -->
+        <section class="metric-grid">
+            <div class="metric-card revenue">
+                <h3>Estimated Revenue</h3>
+                <strong>₹{{ estimated_revenue }}</strong>
+                <p>All non-cancelled orders</p>
+            </div>
 
+            <div class="metric-card info">
+                <h3>Delivered Revenue</h3>
+                <strong>₹{{ delivered_revenue }}</strong>
+                <p>Completed orders only</p>
+            </div>
+
+            <div class="metric-card warning">
+                <h3>Low Stock Products</h3>
+                <strong>{{ low_stock_count }}</strong>
+                <p>Stock is 5 or below</p>
+            </div>
+
+            <div class="metric-card danger">
+                <h3>Out of Stock</h3>
+                <strong>{{ out_of_stock_count }}</strong>
+                <p>Needs restocking</p>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <a href="{% url 'superadmin_product_create' %}" class="quick-btn primary">
+                ➕ Add Product
+            </a>
+
+            <a href="{% url 'superadmin_category_create' %}" class="quick-btn teal">
+                ➕ Add Category
+            </a>
+
+            <a href="{% url 'superadmin_order_list' %}" class="quick-btn light">
+                🛒 View Orders
+            </a>
+
+            <a href="{% url 'superadmin_bulk_request_list' %}" class="quick-btn light">
+                📋 Bulk Requests
+            </a>
+
+            <a href="{% url 'superadmin_customer_list' %}" class="quick-btn light">
+                👥 Customers
+            </a>
+        </section>
+
+        <!-- Analytics -->
+        <section class="analytics-section">
+            <div class="analytics-grid">
+
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h2>Monthly Orders</h2>
+                        <span>Last 6 Months</span>
+                    </div>
+
+                    <div class="analytics-body">
+                        <div class="monthly-chart">
+                            {% for item in monthly_orders %}
+                            <div class="month-bar">
+                                <strong>{{ item.count }}</strong>
+                                <div
+                                    class="month-column"
+                                    style="height: {% if item.percent < 8 and item.count > 0 %}8{% else %}{{ item.percent }}{% endif %}%"
+                                    title="{{ item.count }} orders"
+                                ></div>
+                                <span>{{ item.label }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h2>Payment Methods</h2>
+                        <span>COD / UPI</span>
+                    </div>
+
+                    <div class="analytics-body">
+                        <div class="payment-grid">
+                            <div class="payment-card">
+                                <h3>COD Orders</h3>
+                                <strong>{{ cod_orders }}</strong>
+
+                                <div class="bar-track" style="margin-top:14px">
+                                    <div class="bar-fill teal" style="width: {{ cod_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="payment-card">
+                                <h3>UPI Orders</h3>
+                                <strong>{{ upi_orders }}</strong>
+
+                                <div class="bar-track" style="margin-top:14px">
+                                    <div class="bar-fill" style="width: {{ upi_percent }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:18px;background:var(--paper-dk);border:1px solid var(--cream);border-radius:12px;padding:14px;color:#777;font-size:.84rem;line-height:1.6">
+                            Payment data is based on order payment method selection. Real payment verification is not added yet, because apparently money tracking should not be imaginary. We’ll add it later if needed.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="analytics-section">
+            <div class="analytics-grid">
+
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h2>Order Status Analytics</h2>
+                        <span>{{ total_orders }} Orders</span>
+                    </div>
+
+                    <div class="analytics-body">
+                        <div class="bar-list">
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Pending</span>
+                                    <span>{{ pending_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: {{ pending_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Confirmed</span>
+                                    <span>{{ confirmed_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill teal" style="width: {{ confirmed_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Packed</span>
+                                    <span>{{ packed_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill purple" style="width: {{ packed_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Out for Delivery</span>
+                                    <span>{{ out_for_delivery_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill teal" style="width: {{ out_for_delivery_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Delivered</span>
+                                    <span>{{ delivered_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill green" style="width: {{ delivered_percent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="bar-item">
+                                <div class="bar-top">
+                                    <span>Cancelled</span>
+                                    <span>{{ cancelled_orders }}</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill red" style="width: {{ cancelled_percent }}%"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h2>Top Ordered Products</h2>
+                        <span>By Order Count</span>
+                    </div>
+
+                    <div class="analytics-body">
+                        {% if top_products %}
+                            <div class="bar-list">
+                                {% for item in top_products %}
+                                <div class="bar-item">
+                                    <div class="bar-top">
+                                        <span>{{ item.name }}</span>
+                                        <span>{{ item.count }}</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width: {{ item.percent }}%"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div style="padding:36px 12px;text-align:center;color:#999">
+                                <div style="font-size:3rem;margin-bottom:12px">📦</div>
+                                <strong style="color:var(--ink)">No order data yet</strong>
+                                <p style="margin-top:6px;font-size:.86rem">Top products will appear after customers place orders.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Content -->
         <section class="content-grid">
 
             <div class="panel-card">
@@ -167,48 +625,58 @@
                                 <th>Customer</th>
                                 <th>Product</th>
                                 <th>Qty</th>
-                                <th>Payment</th>
                                 <th>Status</th>
+                                <th>Payment</th>
                                 <th>Date</th>
                             </tr>
                         </thead>
 
                         <tbody>
                             {% for order in latest_orders %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ order.name }}</strong><br>
-                                        <span style="font-size:.75rem;color:#aaa">{{ order.phone }}</span>
-                                    </td>
+                            <tr>
+                                <td>
+                                    <strong>{{ order.name }}</strong><br>
+                                    <span style="font-size:.75rem;color:#aaa">{{ order.phone }}</span>
+                                </td>
 
-                                    <td>{{ order.product.name }}</td>
+                                <td>{{ order.product.name }}</td>
 
-                                    <td>
-                                        <span style="background:var(--paper-dk);padding:3px 10px;border-radius:50px;font-size:.8rem;font-weight:600">
-                                            {{ order.quantity }}
-                                        </span>
-                                    </td>
+                                <td>
+                                    <span style="background:var(--paper-dk);padding:3px 10px;border-radius:50px;font-size:.8rem;font-weight:600">
+                                        {{ order.quantity }}
+                                    </span>
+                                </td>
 
-                                    <td>{{ order.payment_method }}</td>
+                                <td>
+                                    {% if order.status == "PENDING" %}
+                                        <span class="status-pill pending">Pending</span>
+                                    {% elif order.status == "CONFIRMED" %}
+                                        <span class="status-pill confirmed">Confirmed</span>
+                                    {% elif order.status == "DELIVERED" %}
+                                        <span class="status-pill delivered">Delivered</span>
+                                    {% elif order.status == "CANCELLED" %}
+                                        <span class="status-pill cancelled">Cancelled</span>
+                                    {% else %}
+                                        <span class="status-pill other">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
 
-                                    <td>
-                                        <a href="{% url 'superadmin_order_detail' order.id %}" style="text-decoration:none">
-                                            <span class="status-pill status-{{ order.status|lower }}">
-                                                {{ order.get_status_display }}
-                                            </span>
-                                        </a>
-                                    </td>
+                                <td>
+                                    <span style="background:rgba(26,107,107,.1);color:var(--teal);padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:700">
+                                        {{ order.payment_method }}
+                                    </span>
+                                </td>
 
-                                    <td style="color:#aaa;font-size:.8rem">
-                                        {{ order.created_at|date:"d M Y" }}
-                                    </td>
-                                </tr>
+                                <td style="color:#aaa;font-size:.8rem">
+                                    {{ order.created_at|date:"d M Y" }}
+                                </td>
+                            </tr>
                             {% empty %}
-                                <tr>
-                                    <td colspan="6" style="text-align:center;color:#aaa;padding:32px">
-                                        No orders yet. Humanity briefly resisted buying notebooks. 📦
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td colspan="6" style="text-align:center;color:#aaa;padding:32px">
+                                    No orders yet. 📦
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -223,17 +691,17 @@
 
                 <div class="low-stock-list">
                     {% for product in low_stock_products %}
-                        <div class="stock-item">
-                            <div>
-                                <h4>{{ product.name }}</h4>
-                                <p>{{ product.category.name }}</p>
-                            </div>
-                            <span>{{ product.stock }} left</span>
+                    <div class="stock-item">
+                        <div>
+                            <h4>{{ product.name }}</h4>
+                            <p>{{ product.category.name }}</p>
                         </div>
+                        <span>{{ product.stock }} left</span>
+                    </div>
                     {% empty %}
-                        <div style="padding:32px 24px;text-align:center;color:#aaa">
-                            ✅ All products have sufficient stock.
-                        </div>
+                    <div style="padding:32px 24px;text-align:center;color:#aaa">
+                        ✅ All products have sufficient stock.
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -243,5 +711,6 @@
     </main>
 </div>
 
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
 </body>
 </html>
