@@ -411,6 +411,12 @@
                 <a href="{% url 'superadmin_export_products_csv' %}" class="action-btn light">
                     ⬇️ Export CSV
                 </a>
+                <a
+                    href="{% url 'superadmin_export_products_csv' %}?{% if query %}q={{ query|urlencode }}&{% endif %}{% if category_slug %}category={{ category_slug|urlencode }}&{% endif %}{% if stock_filter %}stock={{ stock_filter|urlencode }}{% endif %}"
+                    class="action-btn light"
+                >
+                    ⬇️ Export CSV
+                </a>
             </div>
         </section>
 

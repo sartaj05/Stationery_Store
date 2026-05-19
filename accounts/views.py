@@ -778,7 +778,6 @@ def superadmin_order_invoice(request, pk):
     return render(request, "accounts/superadmin_order_invoice.html", context)
 
 
-
 # ===============================
 # CSV EXPORTS
 # ===============================
@@ -793,6 +792,33 @@ def _csv_response(filename):
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_export_products_csv(request):
+    query = request.GET.get("q", "").strip()
+    category_slug = request.GET.get("category", "").strip()
+    stock_filter = request.GET.get("stock", "").strip()
+
+    products = Product.objects.select_related("category").all()
+
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) |
+            Q(brand__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    if category_slug:
+        products = products.filter(category__slug=category_slug)
+
+    if stock_filter == "low":
+        products = products.filter(stock__lte=5)
+    elif stock_filter == "out":
+        products = products.filter(stock=0)
+    elif stock_filter == "active":
+        products = products.filter(is_active=True)
+    elif stock_filter == "inactive":
+        products = products.filter(is_active=False)
+
+    products = products.order_by("-created_at")
+
     response = _csv_response("products_export.csv")
     writer = csv.writer(response)
 
@@ -811,12 +837,6 @@ def superadmin_export_products_csv(request):
         "Active",
         "Created At",
     ])
-
-    products = (
-        Product.objects
-        .select_related("category")
-        .order_by("-created_at")
-    )
 
     for product in products:
         writer.writerow([
@@ -841,6 +861,28 @@ def superadmin_export_products_csv(request):
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_export_orders_csv(request):
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    orders = Order.objects.select_related(
+        "product",
+        "product__category",
+        "customer"
+    ).all()
+
+    if query:
+        orders = orders.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(product__name__icontains=query) |
+            Q(customer__username__icontains=query)
+        )
+
+    if status:
+        orders = orders.filter(status=status)
+
+    orders = orders.order_by("-created_at")
+
     response = _csv_response("orders_export.csv")
     writer = csv.writer(response)
 
@@ -861,12 +903,6 @@ def superadmin_export_orders_csv(request):
         "Created At",
         "Updated At",
     ])
-
-    orders = (
-        Order.objects
-        .select_related("product", "product__category", "customer")
-        .order_by("-created_at")
-    )
 
     for order in orders:
         writer.writerow([
@@ -893,6 +929,29 @@ def superadmin_export_orders_csv(request):
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_export_customers_csv(request):
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    customers = (
+        User.objects
+        .filter(is_superuser=False)
+        .annotate(order_count=Count("orders"))
+        .order_by("-date_joined")
+    )
+
+    if query:
+        customers = customers.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query)
+        )
+
+    if status == "active":
+        customers = customers.filter(is_active=True)
+    elif status == "inactive":
+        customers = customers.filter(is_active=False)
+
     response = _csv_response("customers_export.csv")
     writer = csv.writer(response)
 
@@ -910,13 +969,6 @@ def superadmin_export_customers_csv(request):
         "Date Joined",
         "Last Login",
     ])
-
-    customers = (
-        User.objects
-        .filter(is_superuser=False)
-        .annotate(order_count=Count("orders"))
-        .order_by("-date_joined")
-    )
 
     for customer in customers:
         writer.writerow([
@@ -940,6 +992,24 @@ def superadmin_export_customers_csv(request):
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_export_bulk_requests_csv(request):
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    bulk_requests = BulkOrderRequest.objects.all()
+
+    if query:
+        bulk_requests = bulk_requests.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(organisation__icontains=query) |
+            Q(requirement__icontains=query)
+        )
+
+    if status:
+        bulk_requests = bulk_requests.filter(status=status)
+
+    bulk_requests = bulk_requests.order_by("-created_at")
+
     response = _csv_response("bulk_requests_export.csv")
     writer = csv.writer(response)
 
@@ -954,8 +1024,6 @@ def superadmin_export_bulk_requests_csv(request):
         "Created At",
         "Updated At",
     ])
-
-    bulk_requests = BulkOrderRequest.objects.order_by("-created_at")
 
     for item in bulk_requests:
         writer.writerow([
