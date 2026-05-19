@@ -113,7 +113,6 @@ function previewProductImage() {
         reader.readAsDataURL(file);
     });
 }
-
 function highlightActiveSidebarLink() {
     const currentPath = window.location.pathname;
     const links = document.querySelectorAll(".side-menu a");
