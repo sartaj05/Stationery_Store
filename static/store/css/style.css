@@ -1375,3 +1375,73 @@ ul { list-style: none; }
         align-items: flex-start;
     }
 }
+
+/* ============================================================
+   MY ORDERS PAGE
+   ============================================================ */
+
+.my-orders-list {
+    display: grid;
+    gap: 24px;
+}
+
+.my-order-card {
+    background: #fff;
+    border: 1.5px solid var(--cream);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.my-order-header {
+    padding: 22px 26px;
+    border-bottom: 1.5px solid var(--cream);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    background: var(--paper-dark);
+}
+
+.my-order-header h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--ink);
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+.my-order-header p {
+    color: #999;
+    font-size: .82rem;
+}
+
+.my-order-body {
+    padding: 26px;
+}
+
+.my-order-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+    .my-order-header {
+        flex-direction: column;
+        padding: 22px;
+    }
+
+    .my-order-body {
+        padding: 22px;
+    }
+
+    .my-order-actions {
+        justify-content: stretch;
+    }
+
+    .my-order-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

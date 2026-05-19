@@ -28,6 +28,8 @@
             {% if request.user.is_authenticated %}
                 {% if request.user.is_superuser %}
                     <a href="{% url 'superadmin_dashboard' %}" class="admin-btn">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'my_orders' %}" class="admin-btn">My Orders</a>
                 {% endif %}
                 <a href="{% url 'logout' %}" class="login-btn">Logout</a>
             {% else %}

@@ -1,0 +1,131 @@
+{% extends "store/base.html" %}
+
+{% block title %}My Orders | Delhi Stationery{% endblock %}
+
+{% block content %}
+
+<section class="page-banner">
+    <div class="container">
+        <h1>My Orders</h1>
+        <p>View your order history and latest delivery status.</p>
+    </div>
+</section>
+
+<section class="container section">
+
+    {% if orders %}
+        <div class="my-orders-list">
+
+            {% for order in orders %}
+            <div class="my-order-card">
+
+                <div class="my-order-header">
+                    <div>
+                        <span class="order-id">Order #{{ order.id }}</span>
+                        <h3>{{ order.product.name }}</h3>
+                        <p>{{ order.created_at|date:"d M Y, h:i A" }}</p>
+                    </div>
+
+                    {% if order.status == "PENDING" %}
+                        <span class="order-status pending">Pending</span>
+                    {% elif order.status == "CONFIRMED" %}
+                        <span class="order-status confirmed">Confirmed</span>
+                    {% elif order.status == "PACKED" %}
+                        <span class="order-status packed">Packed</span>
+                    {% elif order.status == "OUT_FOR_DELIVERY" %}
+                        <span class="order-status delivery">Out for Delivery</span>
+                    {% elif order.status == "DELIVERED" %}
+                        <span class="order-status delivered">Delivered</span>
+                    {% elif order.status == "CANCELLED" %}
+                        <span class="order-status cancelled">Cancelled</span>
+                    {% else %}
+                        <span class="order-status pending">{{ order.status }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="my-order-body">
+
+                    <div class="order-product-row">
+                        <div class="order-product-img">
+                            {% if order.product.image %}
+                                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+                            {% else %}
+                                📦
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <h4>{{ order.product.name }}</h4>
+                            <p>{{ order.product.category.name }}</p>
+                            {% if order.product.brand %}
+                                <p>Brand: {{ order.product.brand }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="order-summary-grid">
+                        <div>
+                            <span>Customer</span>
+                            <strong>{{ order.name }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Phone</span>
+                            <strong>{{ order.phone }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Quantity</span>
+                            <strong>{{ order.quantity }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Payment</span>
+                            <strong>{{ order.get_payment_method_display }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Total Amount</span>
+                            <strong>₹{{ order.total_price }}</strong>
+                        </div>
+
+                        <div>
+                            <span>Status</span>
+                            <strong>{{ order.get_status_display }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="order-address">
+                        <span>Delivery Address</span>
+                        <p>{{ order.address }}</p>
+                    </div>
+
+                    <div class="my-order-actions">
+                        <a href="{% url 'product_detail' order.product.id %}" class="btn outline-btn">
+                            View Product
+                        </a>
+
+                        <a href="{% url 'track_order' %}?phone={{ order.phone }}&order_id={{ order.id }}" class="btn primary-btn">
+                            Track Order
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    {% else %}
+        <div class="empty-box">
+            <div style="font-size:3rem;margin-bottom:16px">📦</div>
+            <h3>No orders yet</h3>
+            <p>You have not placed any order from this account yet.</p>
+            <a href="{% url 'product_list' %}" class="btn primary-btn" style="margin-top:20px">
+                Start Shopping
+            </a>
+        </div>
+    {% endif %}
+
+</section>
+
+{% endblock %}

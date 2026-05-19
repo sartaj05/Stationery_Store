@@ -4,7 +4,7 @@ from django.contrib import messages
 
 from .models import Product, Category, Order
 from .forms import OrderForm
-
+from django.contrib.auth.decorators import login_required
 
 def home(request):
     categories = Category.objects.all()
@@ -74,6 +74,9 @@ def order_product(request, product_id):
             order = form.save(commit=False)
             order.product = product
 
+            if request.user.is_authenticated:
+                order.customer = request.user
+
             if order.quantity > product.stock:
                 messages.error(request, "Quantity is greater than available stock.")
                 return redirect("order_product", product_id=product.id)
@@ -90,7 +93,13 @@ def order_product(request, product_id):
             return redirect("order_success")
 
     else:
-        form = OrderForm()
+        initial_data = {}
+
+        if request.user.is_authenticated:
+            initial_data["name"] = request.user.get_full_name() or request.user.username
+            initial_data["phone"] = ""
+
+        form = OrderForm(initial=initial_data)
 
     context = {
         "product": product,
@@ -147,3 +156,18 @@ def about(request):
 
 def contact(request):
     return render(request, "store/contact.html")
+
+
+@login_required
+def my_orders(request):
+    orders = (
+        Order.objects
+        .select_related("product", "product__category")
+        .filter(customer=request.user)
+        .order_by("-created_at")
+    )
+
+    context = {
+        "orders": orders,
+    }
+    return render(request, "store/my_orders.html", context)

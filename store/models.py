@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth.models import User
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -65,7 +65,6 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-
 class Order(models.Model):
     PAYMENT_CHOICES = [
         ("COD", "Cash on Delivery"),
@@ -80,6 +79,14 @@ class Order(models.Model):
         ("DELIVERED", "Delivered"),
         ("CANCELLED", "Cancelled"),
     ]
+
+    customer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders"
+    )
 
     name = models.CharField(max_length=120)
     phone = models.CharField(max_length=15)
