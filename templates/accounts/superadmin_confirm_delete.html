@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title|default:"Confirm Delete" }} | Superadmin | Delhi Stationery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+    <style>
+        .delete-wrap {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+        .delete-card {
+            width: min(100%, 560px);
+            background: #fff;
+            border: 1.5px solid var(--cream);
+            border-radius: 18px;
+            box-shadow: 0 18px 45px rgba(26,20,16,.12);
+            overflow: hidden;
+        }
+        .delete-head {
+            padding: 28px;
+            background: rgba(192,57,43,.08);
+            border-bottom: 1.5px solid rgba(192,57,43,.18);
+            text-align: center;
+        }
+        .delete-head .icon { font-size: 3rem; margin-bottom: 10px; }
+        .delete-head h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            font-size: 1.55rem;
+            margin-bottom: 8px;
+        }
+        .delete-head p { color: #8a7770; font-size: .92rem; line-height: 1.6; }
+        .delete-body { padding: 26px 28px; }
+        .object-box {
+            background: var(--paper-dk);
+            border: 1px solid var(--cream);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 22px;
+        }
+        .object-box span {
+            display: block;
+            color: #999;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .object-box strong { color: var(--ink); font-size: 1rem; }
+        .delete-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            border: none;
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 999px;
+            padding: 11px 22px;
+            font-size: .86rem;
+            font-weight: 800;
+            font-family: 'DM Sans', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn.light {
+            background: var(--paper-dk);
+            color: var(--ink);
+            border: 1.5px solid var(--cream);
+        }
+        .action-btn.danger {
+            background: var(--ruby);
+            color: #fff;
+        }
+        @media (max-width: 640px) {
+            .delete-wrap { padding: 20px; }
+            .delete-actions .action-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h2>📚 Delhi Stationery</h2>
+            <p>Superadmin Panel</p>
+        </div>
+        <nav class="side-menu">
+            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
+            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
+            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
+            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
+            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
+            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
+            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
+            <a href="{% url 'home' %}">🌐 Visit Website</a>
+            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+        </nav>
+    </aside>
+    <main class="dashboard-main">
+        <header class="dashboard-header">
+            <div>
+                <h1>{{ title|default:"Confirm Delete" }}</h1>
+                <p>Review before deleting this record.</p>
+            </div>
+        </header>
+        <section class="delete-wrap">
+            <div class="delete-card">
+                <div class="delete-head">
+                    <div class="icon">⚠️</div>
+                    <h1>Delete Confirmation</h1>
+                    <p>This action cannot be undone. The record will be permanently removed.</p>
+                </div>
+                <div class="delete-body">
+                    <div class="object-box">
+                        <span>Selected Record</span>
+                        <strong>{{ object }}</strong>
+                    </div>
+                    <form method="post" class="delete-actions">
+                        {% csrf_token %}
+                        <a href="{% url cancel_url %}" class="action-btn light">Cancel</a>
+                        <button type="submit" class="action-btn danger">🗑️ Delete</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+<script src="{% static 'accounts/js/superadmin.js' %}"></script>
+</body>
+</html>
