@@ -1,3 +1,6 @@
+from decimal import Decimal
+from types import SimpleNamespace
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
 from django.db.models import Q
@@ -8,67 +11,267 @@ from .models import Product, Category, Order
 from .forms import OrderForm, BulkOrderRequestForm
 
 
+# ============================================================
+# DUMMY PUBLIC CONTENT
+# Shows only when no active real products exist.
+# Once admin/superadmin adds real active product, dummy disappears.
+# ============================================================
+
+def _dummy_category(name, slug, icon):
+    return SimpleNamespace(
+        id=slug,
+        name=name,
+        slug=slug,
+        icon=icon,
+        is_dummy=True,
+    )
+
+
+def _dummy_product(
+    name,
+    category,
+    brand,
+    description,
+    price,
+    discount_price,
+    stock,
+    image_url,
+    is_featured=False,
+):
+    return SimpleNamespace(
+        id=None,
+        name=name,
+        category=category,
+        brand=brand,
+        description=description,
+        price=Decimal(str(price)),
+        discount_price=Decimal(str(discount_price)) if discount_price else None,
+        stock=stock,
+        image=None,
+        image_url=image_url,
+        is_featured=is_featured,
+        is_active=True,
+        is_dummy=True,
+        final_price=Decimal(str(discount_price)) if discount_price else Decimal(str(price)),
+        stock_status=(
+            "Out of Stock"
+            if stock <= 0
+            else "Low Stock"
+            if stock <= 5
+            else "Available"
+        ),
+    )
+
+
+def get_dummy_categories():
+    return [
+        _dummy_category("Notebooks", "notebooks", "📒"),
+        _dummy_category("Pens", "pens", "🖊️"),
+        _dummy_category("School Supplies", "school-supplies", "🎒"),
+        _dummy_category("Office Stationery", "office-stationery", "📁"),
+        _dummy_category("Exam Materials", "exam-materials", "📋"),
+        _dummy_category("Art Supplies", "art-supplies", "🎨"),
+    ]
+
+
+def get_dummy_products():
+    categories = {category.slug: category for category in get_dummy_categories()}
+
+    return [
+        _dummy_product(
+            name="Premium A4 Notebook Pack",
+            category=categories["notebooks"],
+            brand="Classmate",
+            description="High-quality ruled notebooks suitable for school, coaching, office notes and daily writing.",
+            price="240",
+            discount_price="199",
+            stock=25,
+            image_url="https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=900&q=80",
+            is_featured=True,
+        ),
+        _dummy_product(
+            name="Blue Ball Pen Set",
+            category=categories["pens"],
+            brand="Cello",
+            description="Smooth writing blue ball pen set for students, offices and daily stationery use.",
+            price="120",
+            discount_price="99",
+            stock=60,
+            image_url="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=900&q=80",
+            is_featured=True,
+        ),
+        _dummy_product(
+            name="Student Geometry Box",
+            category=categories["school-supplies"],
+            brand="Camlin",
+            description="Complete geometry box for school students with compass, divider, scale and protractor.",
+            price="180",
+            discount_price="149",
+            stock=18,
+            image_url="https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=900&q=80",
+            is_featured=True,
+        ),
+        _dummy_product(
+            name="Office File Folder Combo",
+            category=categories["office-stationery"],
+            brand="Solo",
+            description="Durable file folders for office documents, school certificates and business records.",
+            price="300",
+            discount_price="249",
+            stock=12,
+            image_url="https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=900&q=80",
+            is_featured=True,
+        ),
+        _dummy_product(
+            name="Exam Writing Pad",
+            category=categories["exam-materials"],
+            brand="Delhi Stationery",
+            description="Strong and lightweight exam pad for school, college and competitive exams.",
+            price="90",
+            discount_price="75",
+            stock=30,
+            image_url="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
+            is_featured=False,
+        ),
+        _dummy_product(
+            name="Colour Pencil Kit",
+            category=categories["art-supplies"],
+            brand="Faber-Castell",
+            description="Bright colour pencil kit for drawing, school projects and creative artwork.",
+            price="220",
+            discount_price="179",
+            stock=9,
+            image_url="https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=900&q=80",
+            is_featured=False,
+        ),
+        _dummy_product(
+            name="Register Long Book",
+            category=categories["notebooks"],
+            brand="Navneet",
+            description="Long register book for accounts, rough work, coaching notes and office records.",
+            price="160",
+            discount_price="135",
+            stock=22,
+            image_url="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80",
+            is_featured=False,
+        ),
+        _dummy_product(
+            name="Stapler and Pin Set",
+            category=categories["office-stationery"],
+            brand="Kangaro",
+            description="Office stapler with pin pack for files, documents and daily desk work.",
+            price="180",
+            discount_price="150",
+            stock=14,
+            image_url="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80",
+            is_featured=False,
+        ),
+    ]
+
+
+def _filter_dummy_products(products, query=None, category_slug=None):
+    filtered_products = products
+
+    if query:
+        q = query.lower()
+        filtered_products = [
+            product for product in filtered_products
+            if q in product.name.lower()
+            or q in product.brand.lower()
+            or q in product.description.lower()
+            or q in product.category.name.lower()
+        ]
+
+    if category_slug:
+        filtered_products = [
+            product for product in filtered_products
+            if product.category.slug == category_slug
+        ]
+
+    return filtered_products
+
+
+# ============================================================
+# PUBLIC STORE VIEWS
+# ============================================================
+
 def home(request):
-    categories = Category.objects.all()
-    featured_products = (
-        Product.objects
-        .filter(is_active=True, is_featured=True)
-        .select_related("category")[:8]
-    )
-    latest_products = (
-        Product.objects
-        .filter(is_active=True)
-        .select_related("category")
-        .order_by("-created_at")[:12]
-    )
+    real_active_products = Product.objects.filter(is_active=True)
+    has_real_products = real_active_products.exists()
+
+    if has_real_products:
+        categories = Category.objects.all()
+        featured_products = real_active_products.filter(is_featured=True)[:8]
+
+        if not featured_products.exists():
+            featured_products = real_active_products.order_by("-created_at")[:8]
+
+        latest_products = real_active_products.order_by("-created_at")[:12]
+        using_dummy_content = False
+    else:
+        categories = get_dummy_categories()
+        dummy_products = get_dummy_products()
+        featured_products = [product for product in dummy_products if product.is_featured][:8]
+        latest_products = dummy_products[:12]
+        using_dummy_content = True
 
     context = {
         "categories": categories,
         "featured_products": featured_products,
         "latest_products": latest_products,
+        "using_dummy_content": using_dummy_content,
     }
     return render(request, "store/home.html", context)
 
 
 def product_list(request):
-    products = Product.objects.filter(is_active=True).select_related("category")
-    categories = Category.objects.all()
-
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
 
-    if query:
-        products = products.filter(
-            Q(name__icontains=query)
-            | Q(brand__icontains=query)
-            | Q(description__icontains=query)
-        )
+    real_active_products = Product.objects.filter(is_active=True)
+    has_real_products = real_active_products.exists()
 
-    if category_slug:
-        products = products.filter(category__slug=category_slug)
+    if has_real_products:
+        products = real_active_products.select_related("category")
+        categories = Category.objects.all()
+        using_dummy_content = False
+
+        if query:
+            products = products.filter(
+                Q(name__icontains=query)
+                | Q(brand__icontains=query)
+                | Q(description__icontains=query)
+            )
+
+        if category_slug:
+            products = products.filter(category__slug=category_slug)
+
+    else:
+        categories = get_dummy_categories()
+        products = _filter_dummy_products(
+            get_dummy_products(),
+            query=query,
+            category_slug=category_slug,
+        )
+        using_dummy_content = True
 
     context = {
         "products": products,
         "categories": categories,
         "query": query,
         "selected_category": category_slug,
+        "using_dummy_content": using_dummy_content,
     }
     return render(request, "store/product_list.html", context)
 
 
 def product_detail(request, product_id):
-    product = get_object_or_404(
-        Product.objects.select_related("category"),
-        id=product_id,
-        is_active=True,
-    )
+    product = get_object_or_404(Product, id=product_id, is_active=True)
 
-    related_products = (
-        Product.objects
-        .filter(category=product.category, is_active=True)
-        .select_related("category")
-        .exclude(id=product.id)[:4]
-    )
+    related_products = Product.objects.filter(
+        category=product.category,
+        is_active=True
+    ).exclude(id=product.id)[:4]
 
     context = {
         "product": product,
@@ -78,11 +281,7 @@ def product_detail(request, product_id):
 
 
 def order_product(request, product_id):
-    product = get_object_or_404(
-        Product.objects.select_related("category"),
-        id=product_id,
-        is_active=True,
-    )
+    product = get_object_or_404(Product, id=product_id, is_active=True)
 
     if product.stock <= 0:
         messages.error(request, "This product is currently out of stock.")
@@ -93,39 +292,32 @@ def order_product(request, product_id):
 
         if form.is_valid():
             with transaction.atomic():
-                product_locked = get_object_or_404(
-                    Product.objects.select_for_update().select_related("category"),
-                    id=product_id,
+                product = Product.objects.select_for_update().get(
+                    id=product.id,
                     is_active=True,
                 )
 
                 order = form.save(commit=False)
-                order.product = product_locked
+                order.product = product
 
                 if request.user.is_authenticated:
                     order.customer = request.user
 
-                if product_locked.stock <= 0:
-                    messages.error(request, "This product is currently out of stock.")
-                    return redirect("product_detail", product_id=product_locked.id)
-
-                if order.quantity > product_locked.stock:
-                    messages.error(
-                        request,
-                        f"Only {product_locked.stock} units are available in stock."
-                    )
-                    return redirect("order_product", product_id=product_locked.id)
+                if order.quantity > product.stock:
+                    messages.error(request, "Quantity is greater than available stock.")
+                    return redirect("order_product", product_id=product.id)
 
                 order.save()
 
-                product_locked.stock -= order.quantity
-                product_locked.save(update_fields=["stock"])
+                product.stock -= order.quantity
+                product.save(update_fields=["stock"])
 
             messages.success(
                 request,
                 f"Your order has been placed successfully. Your Order ID is #{order.id}."
             )
-            return redirect(f"/order-success/?order_id={order.id}")
+            request.session["last_order_id"] = order.id
+            return redirect("order_success")
 
     else:
         initial_data = {}
@@ -144,8 +336,11 @@ def order_product(request, product_id):
 
 
 def order_success(request):
-    order_id = request.GET.get("order_id", "").strip()
-    return render(request, "store/order_success.html", {"order_id": order_id})
+    last_order_id = request.session.get("last_order_id")
+
+    return render(request, "store/order_success.html", {
+        "last_order_id": last_order_id,
+    })
 
 
 def track_order(request):

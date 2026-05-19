@@ -1,32 +1,73 @@
 <div class="product-card">
-    <div class="product-image">
+    <div class="product-img-box">
         {% if product.image %}
             <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% elif product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
         {% else %}
-            <div class="no-image">No Image</div>
+            <div class="no-img">No Image</div>
+        {% endif %}
+
+        {% if product.is_dummy %}
+            <span class="stock-badge success">Sample</span>
+        {% elif product.stock <= 0 %}
+            <span class="stock-badge danger">Out of Stock</span>
+        {% elif product.stock <= 5 %}
+            <span class="stock-badge warning">Low Stock</span>
+        {% else %}
+            <span class="stock-badge success">Available</span>
         {% endif %}
 
         {% if product.discount_price %}
-            <span class="discount-badge">Sale</span>
+            <span style="position:absolute;top:10px;right:10px;background:var(--ruby);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:50px;letter-spacing:.06em">
+                SALE
+            </span>
         {% endif %}
     </div>
 
-    <div class="product-body">
-        <p class="product-category">{{ product.category.name }}</p>
+    <div class="product-info">
+        <span class="product-category">
+            {{ product.category.icon|default:"📦" }} {{ product.category.name }}
+        </span>
+
         <h3>{{ product.name }}</h3>
-        <p class="brand">{{ product.brand|default:"Delhi Stationery" }}</p>
+
+        {% if product.brand %}
+            <div style="font-size:.78rem;color:#bbb;font-style:italic">
+                {{ product.brand }}
+            </div>
+        {% endif %}
+
+        <p>{{ product.description|truncatewords:14 }}</p>
 
         <div class="price-row">
             <strong>₹{{ product.final_price }}</strong>
             {% if product.discount_price %}
-                <span>₹{{ product.price }}</span>
+                <del>₹{{ product.price }}</del>
             {% endif %}
         </div>
 
-        <p class="stock {{ product.stock_status|slugify }}">
-            {{ product.stock_status }}
-        </p>
+        {% if product.is_dummy %}
+            <div style="display:flex;gap:8px;margin-top:10px">
+                <a href="{% url 'contact' %}" class="btn small-btn" style="flex:1;justify-content:center">
+                    Contact Store
+                </a>
+                <a href="{% url 'product_list' %}" class="btn" style="flex:1;justify-content:center;background:var(--saffron);color:var(--ink);padding:7px 14px;font-size:.8rem;font-weight:600;border-radius:50px">
+                    Sample Product
+                </a>
+            </div>
+        {% else %}
+            <div style="display:flex;gap:8px;margin-top:10px">
+                <a href="{% url 'product_detail' product.id %}" class="btn small-btn" style="flex:1;justify-content:center">
+                    View Details
+                </a>
 
-        <a href="{% url 'product_detail' product.id %}" class="card-btn">View Details</a>
+                {% if product.stock > 0 %}
+                    <a href="{% url 'order_product' product.id %}" class="btn" style="flex:1;justify-content:center;background:var(--saffron);color:var(--ink);padding:7px 14px;font-size:.8rem;font-weight:600;border-radius:50px">
+                        Order Now
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 </div>

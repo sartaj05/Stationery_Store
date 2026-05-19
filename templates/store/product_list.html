@@ -12,7 +12,15 @@
 </section>
 
 <section class="container section">
-    <!-- Filter Bar -->
+
+    {% if using_dummy_content %}
+        <div style="background:var(--saffron-lt);border:1.5px solid rgba(232,132,26,.2);border-radius:var(--radius);padding:14px 18px;margin-bottom:24px;color:var(--ink-soft);font-size:.9rem">
+            🧪 <strong>Sample catalogue:</strong>
+            These are demo products shown because no real active products are added yet.
+            Once superadmin/admin adds products, this dummy catalogue will automatically disappear.
+        </div>
+    {% endif %}
+
     <form method="get" class="filter-box">
         <input
             type="text"
@@ -20,6 +28,7 @@
             placeholder="🔍 Search books, pen, copy, brand..."
             value="{{ query|default:'' }}"
         >
+
         <select name="category">
             <option value="">All Categories</option>
             {% for category in categories %}
@@ -29,6 +38,7 @@
                 </option>
             {% endfor %}
         </select>
+
         <button type="submit" class="btn primary-btn">Search</button>
         <a href="{% url 'product_list' %}" class="btn outline-btn">Reset</a>
     </form>
@@ -38,66 +48,25 @@
         Showing results
         {% if query %} for "<strong style="color:var(--ink)">{{ query }}</strong>"{% endif %}
         {% if selected_category %} in <strong style="color:var(--teal)">{{ selected_category }}</strong>{% endif %}
-        &nbsp;·&nbsp; <a href="{% url 'product_list' %}" style="color:var(--saffron);font-weight:600">Clear filters</a>
+        &nbsp;·&nbsp;
+        <a href="{% url 'product_list' %}" style="color:var(--saffron);font-weight:600">
+            Clear filters
+        </a>
     </div>
     {% endif %}
 
     <div class="product-grid">
         {% for product in products %}
-        <div class="product-card">
-            <div class="product-img-box">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                {% else %}
-                    <div class="no-img">No Image</div>
-                {% endif %}
-
-                {% if product.stock <= 0 %}
-                    <span class="stock-badge danger">Out of Stock</span>
-                {% elif product.stock <= 5 %}
-                    <span class="stock-badge warning">Low Stock</span>
-                {% else %}
-                    <span class="stock-badge success">Available</span>
-                {% endif %}
-
-                {% if product.discount_price %}
-                    <span style="position:absolute;top:10px;right:10px;background:var(--ruby);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:50px;letter-spacing:.06em">SALE</span>
-                {% endif %}
-            </div>
-
-            <div class="product-info">
-                <span class="product-category">{{ product.category.name }}</span>
-                <h3>{{ product.name }}</h3>
-                {% if product.brand %}
-                    <div style="font-size:.78rem;color:#bbb;font-style:italic">{{ product.brand }}</div>
-                {% endif %}
-                <p>{{ product.description|truncatewords:14 }}</p>
-
-                <div class="price-row">
-                    <strong>₹{{ product.final_price }}</strong>
-                    {% if product.discount_price %}
-                        <del>₹{{ product.price }}</del>
-                        <span style="font-size:.72rem;background:rgba(232,132,26,.12);color:var(--saffron-dk);padding:2px 7px;border-radius:50px;font-weight:600">
-                            Save ₹{{ product.price|floatformat:0 }}
-                        </span>
-                    {% endif %}
-                </div>
-
-                <div style="display:flex;gap:8px;margin-top:10px">
-                    <a href="{% url 'product_detail' product.id %}" class="btn small-btn" style="flex:1;justify-content:center">View Details</a>
-                    {% if product.stock > 0 %}
-                        <a href="{% url 'order_product' product.id %}" class="btn" style="flex:1;justify-content:center;background:var(--saffron);color:var(--ink);padding:7px 14px;font-size:.8rem;font-weight:600;border-radius:50px">Order Now</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+            {% include "store/product_card.html" %}
         {% empty %}
-        <div class="empty-box">
-            <div style="font-size:3rem;margin-bottom:16px">🔍</div>
-            <h3>No products found</h3>
-            <p>Please try another search term or category.</p>
-            <a href="{% url 'product_list' %}" class="btn primary-btn" style="margin-top:20px">View All Products</a>
-        </div>
+            <div class="empty-box">
+                <div style="font-size:3rem;margin-bottom:16px">🔍</div>
+                <h3>No products found</h3>
+                <p>Please try another search term or category.</p>
+                <a href="{% url 'product_list' %}" class="btn primary-btn" style="margin-top:20px">
+                    View All Products
+                </a>
+            </div>
         {% endfor %}
     </div>
 </section>

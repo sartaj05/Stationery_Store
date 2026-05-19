@@ -1498,3 +1498,25 @@ ul { list-style: none; }
     align-items: center;
     gap: 4px;
 }
+
+/* ============================================================
+   DUMMY / SAMPLE PRODUCT POLISH
+   ============================================================ */
+
+.product-card .stock-badge.success {
+    z-index: 2;
+}
+
+.product-card img {
+    background: var(--paper-dark);
+}
+
+.product-info .product-category {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.empty-box {
+    grid-column: 1 / -1;
+}
