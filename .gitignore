@@ -53,6 +53,7 @@ node_modules/
 *.backup
 *.old
 *.tmp
-
+**/migrations/*
+!**/migrations/__init__.py
 # Do not ignore migrations in real projects
 # Keep migration files committed for deployment stability
