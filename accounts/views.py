@@ -759,3 +759,18 @@ def superadmin_product_restock(request, pk):
             messages.error(request, "Please enter a valid stock quantity.")
 
     return redirect("superadmin_low_stock_list")
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_order_invoice(request, pk):
+    order = get_object_or_404(
+        Order.objects.select_related("product", "product__category", "customer"),
+        pk=pk,
+    )
+
+    context = {
+        "order": order,
+    }
+
+    return render(request, "accounts/superadmin_order_invoice.html", context)

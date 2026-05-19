@@ -226,6 +226,10 @@
                 grid-column: auto;
             }
         }
+        .action-btn.secondary {
+    background: var(--teal);
+    color: #fff;
+}
     </style>
 </head>
 <body>
@@ -419,6 +423,9 @@
 
                         <a href="{% url 'product_detail' order.product.id %}" target="_blank" class="action-btn primary">
                             👁️ View Product
+                        </a>
+                        <a href="{% url 'superadmin_order_invoice' order.id %}" target="_blank" class="action-btn secondary">
+                            🧾 Print Invoice
                         </a>
                     </div>
                 </div>

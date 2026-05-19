@@ -102,4 +102,9 @@ urlpatterns = [
         views.superadmin_product_restock,
         name="superadmin_product_restock"
     ),
+    path(
+        "superadmin/orders/<int:pk>/invoice/",
+        views.superadmin_order_invoice,
+        name="superadmin_order_invoice"
+    ),
 ]

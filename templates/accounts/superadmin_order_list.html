@@ -463,14 +463,22 @@
                                 </td>
 
                                 <td>
-                                    <div style="display:flex;justify-content:flex-end">
-                                        <a
-                                            href="{% url 'superadmin_order_detail' order.id %}"
-                                            class="mini-btn view"
-                                        >
-                                            👁️ View / Update
-                                        </a>
-                                    </div>
+                                    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+    <a
+        href="{% url 'superadmin_order_detail' order.id %}"
+        class="mini-btn view"
+    >
+        👁️ View / Update
+    </a>
+
+    <a
+        href="{% url 'superadmin_order_invoice' order.id %}"
+        target="_blank"
+        class="mini-btn view"
+    >
+        🧾 Invoice
+    </a>
+</div>
                                 </td>
                             </tr>
                             {% empty %}
