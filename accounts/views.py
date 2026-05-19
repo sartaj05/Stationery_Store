@@ -6,7 +6,9 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+import csv
 
+from django.http import HttpResponse
 from store.forms import (
     CategoryForm,
     ProductForm,
@@ -774,3 +776,198 @@ def superadmin_order_invoice(request, pk):
     }
 
     return render(request, "accounts/superadmin_order_invoice.html", context)
+
+
+
+# ===============================
+# CSV EXPORTS
+# ===============================
+
+def _csv_response(filename):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.write("\ufeff")
+    return response
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_export_products_csv(request):
+    response = _csv_response("products_export.csv")
+    writer = csv.writer(response)
+
+    writer.writerow([
+        "ID",
+        "Product Name",
+        "Category",
+        "Brand",
+        "Description",
+        "Original Price",
+        "Discount Price",
+        "Final Price",
+        "Stock",
+        "Stock Status",
+        "Featured",
+        "Active",
+        "Created At",
+    ])
+
+    products = (
+        Product.objects
+        .select_related("category")
+        .order_by("-created_at")
+    )
+
+    for product in products:
+        writer.writerow([
+            product.id,
+            product.name,
+            product.category.name if product.category else "",
+            product.brand,
+            product.description,
+            product.price,
+            product.discount_price if product.discount_price else "",
+            product.final_price(),
+            product.stock,
+            product.stock_status(),
+            "Yes" if product.is_featured else "No",
+            "Yes" if product.is_active else "No",
+            product.created_at.strftime("%d-%m-%Y %I:%M %p") if product.created_at else "",
+        ])
+
+    return response
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_export_orders_csv(request):
+    response = _csv_response("orders_export.csv")
+    writer = csv.writer(response)
+
+    writer.writerow([
+        "Order ID",
+        "Customer Name",
+        "Phone",
+        "Address",
+        "Registered Username",
+        "Product",
+        "Category",
+        "Quantity",
+        "Unit Price",
+        "Total Price",
+        "Payment Method",
+        "Status",
+        "Admin Note",
+        "Created At",
+        "Updated At",
+    ])
+
+    orders = (
+        Order.objects
+        .select_related("product", "product__category", "customer")
+        .order_by("-created_at")
+    )
+
+    for order in orders:
+        writer.writerow([
+            order.id,
+            order.name,
+            order.phone,
+            order.address,
+            order.customer.username if order.customer else "",
+            order.product.name if order.product else "",
+            order.product.category.name if order.product and order.product.category else "",
+            order.quantity,
+            order.product.final_price() if order.product else "",
+            order.total_price(),
+            order.get_payment_method_display(),
+            order.get_status_display(),
+            order.admin_note,
+            order.created_at.strftime("%d-%m-%Y %I:%M %p") if order.created_at else "",
+            order.updated_at.strftime("%d-%m-%Y %I:%M %p") if order.updated_at else "",
+        ])
+
+    return response
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_export_customers_csv(request):
+    response = _csv_response("customers_export.csv")
+    writer = csv.writer(response)
+
+    writer.writerow([
+        "User ID",
+        "Username",
+        "Full Name",
+        "First Name",
+        "Last Name",
+        "Email",
+        "Active",
+        "Staff",
+        "Superuser",
+        "Total Orders",
+        "Date Joined",
+        "Last Login",
+    ])
+
+    customers = (
+        User.objects
+        .filter(is_superuser=False)
+        .annotate(order_count=Count("orders"))
+        .order_by("-date_joined")
+    )
+
+    for customer in customers:
+        writer.writerow([
+            customer.id,
+            customer.username,
+            customer.get_full_name(),
+            customer.first_name,
+            customer.last_name,
+            customer.email,
+            "Yes" if customer.is_active else "No",
+            "Yes" if customer.is_staff else "No",
+            "Yes" if customer.is_superuser else "No",
+            customer.order_count,
+            customer.date_joined.strftime("%d-%m-%Y %I:%M %p") if customer.date_joined else "",
+            customer.last_login.strftime("%d-%m-%Y %I:%M %p") if customer.last_login else "",
+        ])
+
+    return response
+
+
+@login_required
+@user_passes_test(is_superadmin)
+def superadmin_export_bulk_requests_csv(request):
+    response = _csv_response("bulk_requests_export.csv")
+    writer = csv.writer(response)
+
+    writer.writerow([
+        "Request ID",
+        "Name",
+        "Phone",
+        "Organisation",
+        "Requirement",
+        "Status",
+        "Admin Note",
+        "Created At",
+        "Updated At",
+    ])
+
+    bulk_requests = BulkOrderRequest.objects.order_by("-created_at")
+
+    for item in bulk_requests:
+        writer.writerow([
+            item.id,
+            item.name,
+            item.phone,
+            item.organisation,
+            item.requirement,
+            item.get_status_display(),
+            item.admin_note,
+            item.created_at.strftime("%d-%m-%Y %I:%M %p") if item.created_at else "",
+            item.updated_at.strftime("%d-%m-%Y %I:%M %p") if item.updated_at else "",
+        ])
+
+    return response

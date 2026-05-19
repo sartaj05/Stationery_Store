@@ -107,4 +107,24 @@ urlpatterns = [
         views.superadmin_order_invoice,
         name="superadmin_order_invoice"
     ),
+    path(
+        "superadmin/export/products/",
+        views.superadmin_export_products_csv,
+        name="superadmin_export_products_csv"
+    ),
+    path(
+        "superadmin/export/orders/",
+        views.superadmin_export_orders_csv,
+        name="superadmin_export_orders_csv"
+    ),
+    path(
+        "superadmin/export/customers/",
+        views.superadmin_export_customers_csv,
+        name="superadmin_export_customers_csv"
+    ),
+    path(
+        "superadmin/export/bulk-requests/",
+        views.superadmin_export_bulk_requests_csv,
+        name="superadmin_export_bulk_requests_csv"
+    ),
 ]
