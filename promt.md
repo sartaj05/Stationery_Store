@@ -1,0 +1,1 @@
+i want some update like some data add by superadmin and admin i want current time direct not added so i want you add some dummy image product and everything dummay if not add in db then show that which websites good and feel and when admin or superadmin add that product or copy or book then automatic not show dummy only show real show which upload by superadmin and admin
