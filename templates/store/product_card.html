@@ -9,7 +9,7 @@
         {% endif %}
 
         {% if product.is_dummy %}
-            <span class="stock-badge success">Sample</span>
+            <span class="stock-badge sample">Sample</span>
         {% elif product.stock <= 0 %}
             <span class="stock-badge danger">Out of Stock</span>
         {% elif product.stock <= 5 %}
@@ -19,9 +19,7 @@
         {% endif %}
 
         {% if product.discount_price %}
-            <span style="position:absolute;top:10px;right:10px;background:var(--ruby);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:50px;letter-spacing:.06em">
-                SALE
-            </span>
+            <span class="sale-badge">Sale</span>
         {% endif %}
     </div>
 
@@ -33,9 +31,7 @@
         <h3>{{ product.name }}</h3>
 
         {% if product.brand %}
-            <div style="font-size:.78rem;color:#bbb;font-style:italic">
-                {{ product.brand }}
-            </div>
+            <p class="brand-text">{{ product.brand }}</p>
         {% endif %}
 
         <p>{{ product.description|truncatewords:14 }}</p>
@@ -48,24 +44,16 @@
         </div>
 
         {% if product.is_dummy %}
-            <div style="display:flex;gap:8px;margin-top:10px">
-                <a href="{% url 'contact' %}" class="btn small-btn" style="flex:1;justify-content:center">
-                    Contact Store
-                </a>
-                <a href="{% url 'product_list' %}" class="btn" style="flex:1;justify-content:center;background:var(--saffron);color:var(--ink);padding:7px 14px;font-size:.8rem;font-weight:600;border-radius:50px">
-                    Sample Product
-                </a>
+            <div class="card-actions">
+                <a href="{% url 'contact' %}" class="btn small-btn">Contact Store</a>
+                <a href="{% url 'product_list' %}" class="btn mini-primary-btn">Sample</a>
             </div>
         {% else %}
-            <div style="display:flex;gap:8px;margin-top:10px">
-                <a href="{% url 'product_detail' product.id %}" class="btn small-btn" style="flex:1;justify-content:center">
-                    View Details
-                </a>
+            <div class="card-actions">
+                <a href="{% url 'product_detail' product.id %}" class="btn small-btn">View Details</a>
 
                 {% if product.stock > 0 %}
-                    <a href="{% url 'order_product' product.id %}" class="btn" style="flex:1;justify-content:center;background:var(--saffron);color:var(--ink);padding:7px 14px;font-size:.8rem;font-weight:600;border-radius:50px">
-                        Order Now
-                    </a>
+                    <a href="{% url 'order_product' product.id %}" class="btn mini-primary-btn">Order Now</a>
                 {% endif %}
             </div>
         {% endif %}

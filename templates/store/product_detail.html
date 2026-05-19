@@ -4,68 +4,58 @@
 
 {% block content %}
 
-<!-- Breadcrumb -->
-<div style="background:var(--paper-dark);border-bottom:1px solid var(--cream);padding:12px 0">
-    <div class="container" style="font-size:.8rem;color:#aaa;display:flex;align-items:center;gap:8px">
-        <a href="{% url 'home' %}" style="color:var(--teal)">Home</a>
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="{% url 'home' %}">Home</a>
         <span>›</span>
-        <a href="{% url 'product_list' %}" style="color:var(--teal)">Products</a>
+        <a href="{% url 'product_list' %}">Products</a>
         <span>›</span>
-        <a href="{% url 'product_list' %}?category={{ product.category.slug }}" style="color:var(--teal)">{{ product.category.name }}</a>
+        <a href="{% url 'product_list' %}?category={{ product.category.slug }}">{{ product.category.name }}</a>
         <span>›</span>
-        <span style="color:var(--ink)">{{ product.name }}</span>
+        <strong>{{ product.name }}</strong>
     </div>
 </div>
 
 <section class="container section">
     <div class="detail-grid">
-
-        <!-- Product Image -->
         <div class="detail-image">
             {% if product.image %}
                 <img src="{{ product.image.url }}" alt="{{ product.name }}">
             {% else %}
-                <div style="display:flex;flex-direction:column;align-items:center;gap:12px;color:#ccc">
-                    <span style="font-size:5rem">📷</span>
-                    <span style="font-size:.875rem">No Image Available</span>
-                </div>
+                <div class="no-img big">No Image Available</div>
             {% endif %}
         </div>
 
-        <!-- Product Info -->
         <div class="detail-content">
-            <span class="product-category">{{ product.category.name }}</span>
+            <span class="product-category">{{ product.category.icon|default:"📦" }} {{ product.category.name }}</span>
             <h1>{{ product.name }}</h1>
 
             {% if product.brand %}
-                <p style="color:var(--teal);font-weight:600;font-size:.9rem">Brand: {{ product.brand }}</p>
+                <p class="brand-line">Brand: {{ product.brand }}</p>
             {% endif %}
 
-            <p>{{ product.description }}</p>
+            <p>{{ product.description|default:"Product description will be updated soon." }}</p>
 
-            <div class="price-row large" style="margin:20px 0">
+            <div class="price-row large">
                 <strong>₹{{ product.final_price }}</strong>
                 {% if product.discount_price %}
-                    <del style="font-size:1.1rem">₹{{ product.price }}</del>
-                    <span style="background:rgba(232,132,26,.15);color:var(--saffron-dk);padding:4px 12px;border-radius:50px;font-size:.82rem;font-weight:700">
-                        Save ₹{{ product.discount_amount }}
-                    </span>
+                    <del>₹{{ product.price }}</del>
+                    <span class="save-badge">Save ₹{{ product.discount_amount }}</span>
                 {% endif %}
             </div>
 
-            <!-- Stock Status -->
-            <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--paper-dark);border-radius:var(--radius-sm);border:1.5px solid var(--cream);margin-bottom:24px">
-                <span style="font-size:1.2rem">
+            <div class="stock-panel">
+                <span>
                     {% if product.stock <= 0 %}❌{% elif product.stock <= 5 %}⚠️{% else %}✅{% endif %}
                 </span>
                 <div>
-                    <div style="font-size:.75rem;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.08em">Stock Status</div>
+                    <small>Stock Status</small>
                     {% if product.stock <= 0 %}
-                        <span class="text-danger">Out of Stock</span>
+                        <strong class="text-danger">Out of Stock</strong>
                     {% elif product.stock <= 5 %}
-                        <span class="text-warning">Low Stock — Only {{ product.stock }} left</span>
+                        <strong class="text-warning">Low Stock — Only {{ product.stock }} left</strong>
                     {% else %}
-                        <span class="text-success">Available ({{ product.stock }} in stock)</span>
+                        <strong class="text-success">Available ({{ product.stock }} in stock)</strong>
                     {% endif %}
                 </div>
             </div>
@@ -76,59 +66,24 @@
                 {% else %}
                     <button class="btn disabled-btn" disabled>Out of Stock</button>
                 {% endif %}
-                <a href="{% url 'product_list' %}" class="btn outline-btn">← Back to Products</a>
-            </div>
 
-            <!-- Delivery Info -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;padding-top:24px;border-top:1.5px solid var(--cream)">
-                <div style="display:flex;gap:10px;align-items:flex-start">
-                    <span style="font-size:1.4rem">🚚</span>
-                    <div>
-                        <div style="font-size:.78rem;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em">Delivery</div>
-                        <div style="font-size:.8rem;color:#888;margin-top:2px">Delhi area only</div>
-                    </div>
-                </div>
-                <div style="display:flex;gap:10px;align-items:flex-start">
-                    <span style="font-size:1.4rem">💳</span>
-                    <div>
-                        <div style="font-size:.78rem;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em">Payment</div>
-                        <div style="font-size:.8rem;color:#888;margin-top:2px">COD & UPI accepted</div>
-                    </div>
-                </div>
+                <a href="{% url 'contact' %}" class="btn outline-btn">📞 Ask About Product</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Related Products -->
 {% if related_products %}
-<section style="background:var(--paper-dark);padding:64px 0">
+<section class="soft-section">
     <div class="container">
         <div class="section-title">
             <h2>Related Products</h2>
-            <p>More items from {{ product.category.name }}</p>
+            <p>More products from {{ product.category.name }}.</p>
         </div>
 
         <div class="product-grid">
-            {% for item in related_products %}
-            <div class="product-card">
-                <div class="product-img-box">
-                    {% if item.image %}
-                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                    {% else %}
-                        <div class="no-img">No Image</div>
-                    {% endif %}
-                </div>
-                <div class="product-info">
-                    <span class="product-category">{{ item.category.name }}</span>
-                    <h3>{{ item.name }}</h3>
-                    <div class="price-row">
-                        <strong>₹{{ item.final_price }}</strong>
-                        {% if item.discount_price %}<del>₹{{ item.price }}</del>{% endif %}
-                    </div>
-                    <a href="{% url 'product_detail' item.id %}" class="btn small-btn" style="margin-top:8px">View Details</a>
-                </div>
-            </div>
+            {% for product in related_products %}
+                {% include "store/product_card.html" %}
             {% endfor %}
         </div>
     </div>

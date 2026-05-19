@@ -5,7 +5,6 @@
 
 {% block content %}
 
-<!-- HERO -->
 <section class="hero">
     <div class="container hero-grid">
         <div class="hero-content">
@@ -22,77 +21,47 @@
             </p>
 
             <div class="hero-buttons">
-                <a href="{% url 'product_list' %}" class="btn primary-btn">
-                    🛒 Shop Now
-                </a>
-
-                <a
-                    href="{% url 'contact' %}"
-                    class="btn outline-btn"
-                    style="color:#fdf8f0;border-color:rgba(253,248,240,.4)"
-                >
-                    📦 Bulk Order
-                </a>
+                <a href="{% url 'product_list' %}" class="btn primary-btn">🛒 Shop Now</a>
+                <a href="{% url 'contact' %}" class="btn glass-btn">📦 Bulk Order</a>
             </div>
 
-            <div style="display:flex;gap:32px;margin-top:40px;padding-top:32px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap">
-                <div style="text-align:center">
-                    <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:#e8841a">
-                        500+
-                    </div>
-                    <div style="font-size:.75rem;color:rgba(253,248,240,.5);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">
-                        Products
-                    </div>
+            <div class="hero-stats">
+                <div>
+                    <strong>500+</strong>
+                    <span>Products</span>
                 </div>
-
-                <div style="text-align:center">
-                    <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:#e8841a">
-                        Delhi
-                    </div>
-                    <div style="font-size:.75rem;color:rgba(253,248,240,.5);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">
-                        Delivery
-                    </div>
+                <div>
+                    <strong>Delhi</strong>
+                    <span>Delivery</span>
                 </div>
-
-                <div style="text-align:center">
-                    <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:#e8841a">
-                        COD
-                    </div>
-                    <div style="font-size:.75rem;color:rgba(253,248,240,.5);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">
-                        Available
-                    </div>
+                <div>
+                    <strong>COD</strong>
+                    <span>Available</span>
                 </div>
             </div>
         </div>
 
-        <div class="hero-card">
-            <div style="font-size:3rem;margin-bottom:12px">📦</div>
-            <h2>Today's Deals</h2>
-            <p>Notebooks, pens, registers,<br>exam pads & more.</p>
-
-            <a
-                href="{% url 'product_list' %}"
-                class="btn primary-btn"
-                style="margin-top:8px"
-            >
-                Explore Products
-            </a>
+        <div class="hero-visual">
+            <div class="deal-card">
+                <div class="deal-icon">📦</div>
+                <h2>Today's Deals</h2>
+                <p>Notebooks, pens, registers, exam pads & more.</p>
+                <a href="{% url 'product_list' %}" class="btn primary-btn">Explore Products</a>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- DUMMY NOTICE -->
 {% if using_dummy_content %}
-<section class="container" style="padding-top:28px">
-    <div style="background:var(--saffron-lt);border:1.5px solid rgba(232,132,26,.2);border-radius:var(--radius);padding:14px 18px;color:var(--ink-soft);font-size:.9rem;text-align:center">
+<section class="container sample-notice-wrap">
+    <div class="sample-notice">
         🧪 <strong>Sample catalogue mode:</strong>
-        These products are demo products because no real active products are added yet.
-        Once superadmin/admin adds real active products, this dummy content will automatically disappear.
+        These demo products are shown because no real active products are added yet.
+        Once superadmin/admin adds real active products, this dummy content disappears automatically.
     </div>
 </section>
 {% endif %}
 
-<!-- CATEGORIES -->
 <section class="container section">
     <div class="section-title">
         <h2>Shop by Category</h2>
@@ -106,15 +75,12 @@
                 <h3>{{ category.name }}</h3>
             </a>
         {% empty %}
-            <p style="color:#aaa;grid-column:1/-1;text-align:center;padding:40px">
-                No categories added yet.
-            </p>
+            <p class="grid-empty">No categories added yet.</p>
         {% endfor %}
     </div>
 </section>
 
-<!-- FEATURED PRODUCTS -->
-<section style="background:var(--paper-dark);padding:72px 0">
+<section class="soft-section">
     <div class="container">
         <div class="section-title">
             <h2>⭐ Featured Products</h2>
@@ -127,60 +93,47 @@
             </p>
         </div>
 
-        {% if using_dummy_content %}
-            <div style="background:#fff;border:1.5px solid var(--cream);border-radius:var(--radius);padding:14px 18px;margin-bottom:24px;color:#777;font-size:.9rem;text-align:center">
-                🧪 Showing sample featured products. Add real active products from superadmin to replace this section automatically.
-            </div>
-        {% endif %}
-
         <div class="product-grid">
             {% for product in featured_products %}
                 {% include "store/product_card.html" %}
             {% empty %}
-                <p style="color:#aaa;grid-column:1/-1;text-align:center;padding:40px">
-                    No featured products available.
-                </p>
+                <p class="grid-empty">No featured products available.</p>
             {% endfor %}
         </div>
     </div>
 </section>
 
-<!-- WHY CHOOSE US -->
 <section class="container section">
     <div class="section-title">
         <h2>Why Delhi Stationery?</h2>
         <p>Trusted by students, schools and offices across Delhi.</p>
     </div>
 
-    <div class="feature-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-        <div class="feature-card" style="text-align:center">
-            <div style="font-size:2.5rem;margin-bottom:12px">📚</div>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div>📚</div>
             <h3>Wide Selection</h3>
             <p>Books, notebooks, registers, pens, pencils and all school supplies.</p>
         </div>
-
-        <div class="feature-card" style="text-align:center">
-            <div style="font-size:2.5rem;margin-bottom:12px">🚚</div>
+        <div class="feature-card">
+            <div>🚚</div>
             <h3>Delhi Delivery</h3>
             <p>Fast same-day and next-day delivery inside Delhi NCR area.</p>
         </div>
-
-        <div class="feature-card" style="text-align:center">
-            <div style="font-size:2.5rem;margin-bottom:12px">💰</div>
+        <div class="feature-card">
+            <div>💰</div>
             <h3>Best Prices</h3>
             <p>Wholesale and retail pricing with bulk order discounts available.</p>
         </div>
-
-        <div class="feature-card" style="text-align:center">
-            <div style="font-size:2.5rem;margin-bottom:12px">📞</div>
+        <div class="feature-card">
+            <div>📞</div>
             <h3>Support</h3>
             <p>WhatsApp and call support for orders and product queries.</p>
         </div>
     </div>
 </section>
 
-<!-- LATEST PRODUCTS -->
-<section style="background:var(--paper-dark);padding:72px 0">
+<section class="soft-section">
     <div class="container">
         <div class="section-title">
             <h2>🆕 Latest Products</h2>
@@ -197,48 +150,23 @@
             {% for product in latest_products %}
                 {% include "store/product_card.html" %}
             {% empty %}
-                <p style="color:#aaa;grid-column:1/-1;text-align:center;padding:40px">
-                    No products available yet.
-                </p>
+                <p class="grid-empty">No products available yet.</p>
             {% endfor %}
         </div>
 
-        <div style="text-align:center;margin-top:40px">
-            <a href="{% url 'product_list' %}" class="btn primary-btn">
-                View All Products →
-            </a>
+        <div class="center-action">
+            <a href="{% url 'product_list' %}" class="btn primary-btn">View All Products →</a>
         </div>
     </div>
 </section>
 
-<!-- BULK ORDER CTA -->
-<section style="background:var(--teal);padding:56px 0">
-    <div class="container" style="text-align:center">
-        <h2 style="font-family:'Playfair Display',serif;color:#fff;font-size:2rem;font-weight:700;margin-bottom:12px">
-            Need Bulk Stationery for School or Office?
-        </h2>
-
-        <p style="color:rgba(255,255,255,.7);font-size:1rem;margin-bottom:28px">
-            Contact us for wholesale pricing on notebooks, pens, files and all stationery items.
-        </p>
-
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-            <a
-                href="{% url 'contact' %}"
-                class="btn"
-                style="background:#fff;color:var(--teal);font-weight:700"
-            >
-                📋 Request Bulk Order
-            </a>
-
-            <a
-                href="https://wa.me/919876543210"
-                target="_blank"
-                class="btn"
-                style="background:#25d366;color:#fff;font-weight:700"
-            >
-                💬 WhatsApp Us
-            </a>
+<section class="bulk-cta">
+    <div class="container">
+        <h2>Need Bulk Stationery for School or Office?</h2>
+        <p>Contact us for wholesale pricing on notebooks, pens, files and all stationery items.</p>
+        <div class="bulk-actions">
+            <a href="{% url 'contact' %}" class="btn white-btn">📋 Request Bulk Order</a>
+            <a href="https://wa.me/919876543210" target="_blank" class="btn whatsapp-green-btn">💬 WhatsApp Us</a>
         </div>
     </div>
 </section>

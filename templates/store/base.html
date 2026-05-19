@@ -5,20 +5,28 @@
     <meta charset="UTF-8">
     <title>{% block title %}Delhi Stationery Store{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="description" content="Delhi Stationery Store for books, copies, pens, office stationery and school supplies.">
     <link rel="stylesheet" href="{% static 'store/css/style.css' %}">
 </head>
 <body>
 
 <header class="top-header">
     <div class="container header-flex">
-        <a href="{% url 'home' %}" class="logo">
-            📚 Delhi Stationery
-            <span>Books • Copies • Pens</span>
+        <a href="{% url 'home' %}" class="logo" aria-label="Delhi Stationery Home">
+            <span class="logo-mark">📚</span>
+            <span class="logo-text">
+                Delhi Stationery
+                <small>Books • Copies • Pens</small>
+            </span>
         </a>
 
-        <nav class="nav-menu">
+        <button class="mobile-menu-btn" type="button" aria-label="Open menu" data-menu-toggle>
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <nav class="nav-menu" data-nav-menu>
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'product_list' %}">Products</a>
             <a href="{% url 'track_order' %}">Track Order</a>
@@ -41,7 +49,7 @@
 </header>
 
 {% if messages %}
-<div class="container">
+<div class="container alert-wrap">
     {% for message in messages %}
         <div class="alert {{ message.tags }}">{{ message }}</div>
     {% endfor %}
@@ -52,12 +60,15 @@
     {% block content %}{% endblock %}
 </main>
 
-<footer class="footer">
+<footer class="site-footer">
     <div class="container footer-grid">
         <div>
-            <h3>📚 Delhi Stationery</h3>
-            <p>Premium books, notebooks, pens, office and school stationery with fast delivery across Delhi.</p>
+            <a href="{% url 'home' %}" class="footer-logo">📚 Delhi Stationery</a>
+            <p>
+                Premium books, notebooks, pens, office and school stationery with fast delivery across Delhi.
+            </p>
         </div>
+
         <div>
             <h4>Quick Links</h4>
             <a href="{% url 'home' %}">Home</a>
@@ -66,16 +77,20 @@
             <a href="{% url 'about' %}">About Us</a>
             <a href="{% url 'contact' %}">Contact</a>
         </div>
+
         <div>
             <h4>Contact Us</h4>
             <p>📍 Delhi, India</p>
             <p>📞 +91 98765 43210</p>
             <p>✉️ support@delhistationery.in</p>
-            <p>⏰ 9:00 AM – 8:00 PM</p>
+            <p>⏰ 9:00 AM - 8:00 PM</p>
         </div>
     </div>
-    <div class="footer-bottom container">
-        © 2026 Delhi Stationery Store. All Rights Reserved.
+
+    <div class="footer-bottom">
+        <div class="container">
+            © Delhi Stationery. All rights reserved.
+        </div>
     </div>
 </footer>
 
