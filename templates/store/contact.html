@@ -18,16 +18,24 @@
             <h2>Get in Touch</h2>
 
             <p><strong>📍 Address</strong></p>
-            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">Delhi, India</p>
+            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">
+                Delhi, India
+            </p>
 
             <p><strong>📞 Phone</strong></p>
-            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">+91 98765 43210</p>
+            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">
+                +91 98765 43210
+            </p>
 
             <p><strong>✉️ Email</strong></p>
-            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">support@delhistationery.in</p>
+            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:16px;color:#666">
+                support@delhistationery.in
+            </p>
 
             <p><strong>⏰ Business Hours</strong></p>
-            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:24px;color:#666">Monday – Saturday: 9:00 AM – 8:00 PM</p>
+            <p style="border:none;padding-left:28px;padding-top:2px;padding-bottom:24px;color:#666">
+                Monday – Saturday: 9:00 AM – 8:00 PM
+            </p>
 
             <a href="https://wa.me/919876543210" target="_blank" class="btn whatsapp-btn full-btn">
                 💬 WhatsApp Order
@@ -41,28 +49,42 @@
         <div class="contact-card">
             <h2>Bulk Order Request</h2>
 
-            <form>
+            <form method="post">
+                {% csrf_token %}
+
                 <div class="form-group">
                     <label>Your Name</label>
-                    <input type="text" class="form-control" placeholder="Enter your full name">
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <small class="error">{{ form.name.errors.0 }}</small>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label>Mobile Number</label>
-                    <input type="text" class="form-control" placeholder="Enter mobile number">
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                        <small class="error">{{ form.phone.errors.0 }}</small>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
-                    <label>School / Organisation (Optional)</label>
-                    <input type="text" class="form-control" placeholder="Enter school or company name">
+                    <label>School / Organisation Optional</label>
+                    {{ form.organisation }}
+                    {% if form.organisation.errors %}
+                        <small class="error">{{ form.organisation.errors.0 }}</small>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label>Your Requirement</label>
-                    <textarea class="form-control" rows="4" placeholder="Example: 100 A4 notebooks, 50 blue pens, 20 geometry boxes..."></textarea>
+                    {{ form.requirement }}
+                    {% if form.requirement.errors %}
+                        <small class="error">{{ form.requirement.errors.0 }}</small>
+                    {% endif %}
                 </div>
 
-                <button type="button" class="btn primary-btn full-btn" style="font-size:.95rem;padding:13px">
+                <button type="submit" class="btn primary-btn full-btn" style="font-size:.95rem;padding:13px">
                     📋 Submit Request
                 </button>
 

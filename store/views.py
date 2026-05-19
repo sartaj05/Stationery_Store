@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 from .models import Product, Category, Order
-from .forms import OrderForm
-from django.contrib.auth.decorators import login_required
+from .forms import OrderForm, BulkOrderRequestForm
+
 
 def home(request):
     categories = Category.objects.all()
@@ -84,7 +85,7 @@ def order_product(request, product_id):
             order.save()
 
             product.stock -= order.quantity
-            product.save()
+            product.save(update_fields=["stock"])
 
             messages.success(
                 request,
@@ -150,14 +151,6 @@ def track_order(request):
     return render(request, "store/track_order.html", context)
 
 
-def about(request):
-    return render(request, "store/about.html")
-
-
-def contact(request):
-    return render(request, "store/contact.html")
-
-
 @login_required
 def my_orders(request):
     orders = (
@@ -171,3 +164,26 @@ def my_orders(request):
         "orders": orders,
     }
     return render(request, "store/my_orders.html", context)
+
+
+def about(request):
+    return render(request, "store/about.html")
+
+
+def contact(request):
+    if request.method == "POST":
+        form = BulkOrderRequestForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Your bulk order request has been submitted successfully. We will contact you soon."
+            )
+            return redirect("contact")
+    else:
+        form = BulkOrderRequestForm()
+
+    return render(request, "store/contact.html", {
+        "form": form,
+    })

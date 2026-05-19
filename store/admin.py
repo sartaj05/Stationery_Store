@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order
+from .models import Category, Product, Order, BulkOrderRequest
 
 
 @admin.register(Category)
@@ -24,7 +24,13 @@ class ProductAdmin(admin.ModelAdmin):
     )
     list_filter = ("category", "is_featured", "is_active", "created_at")
     search_fields = ("name", "brand", "description")
-    list_editable = ("price", "discount_price", "stock", "is_featured", "is_active")
+    list_editable = (
+        "price",
+        "discount_price",
+        "stock",
+        "is_featured",
+        "is_active",
+    )
 
 
 @admin.register(Order)
@@ -35,8 +41,24 @@ class OrderAdmin(admin.ModelAdmin):
         "product",
         "quantity",
         "payment_method",
+        "status",
         "total_price",
         "created_at",
     )
     search_fields = ("name", "phone", "address", "product__name")
-    list_filter = ("payment_method", "created_at")
+    list_filter = ("payment_method", "status", "created_at")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(BulkOrderRequest)
+class BulkOrderRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "phone",
+        "organisation",
+        "status",
+        "created_at",
+    )
+    search_fields = ("name", "phone", "organisation", "requirement")
+    list_filter = ("status", "created_at")
+    readonly_fields = ("created_at", "updated_at")
