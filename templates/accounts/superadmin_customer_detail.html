@@ -110,6 +110,11 @@
             color: var(--ink);
             font-size: .92rem;
             line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .info-item.full {
+            grid-column: 1 / -1;
         }
 
         .stats-grid-mini {
@@ -204,6 +209,7 @@
             font-weight: 700;
             transition: .2s ease;
             white-space: nowrap;
+            font-family: 'DM Sans', sans-serif;
         }
 
         .action-btn.primary {
@@ -225,6 +231,11 @@
         .action-btn.success {
             background: rgba(39,116,90,.12);
             color: var(--jade);
+        }
+
+        .action-btn.teal {
+            background: var(--teal);
+            color: #fff;
         }
 
         .action-btn:hover {
@@ -270,10 +281,21 @@
             color: var(--teal);
         }
 
+        .mini-btn.invoice {
+            background: rgba(232,132,26,.13);
+            color: var(--saffron);
+        }
+
         .empty-state {
             padding: 44px 24px;
             text-align: center;
             color: #999;
+        }
+
+        .empty-state h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            margin-bottom: 6px;
         }
 
         .messages-wrap {
@@ -300,6 +322,17 @@
             color: var(--ruby);
         }
 
+        .profile-alert {
+            background: var(--paper-dk);
+            border: 1.5px solid var(--cream);
+            border-radius: 14px;
+            padding: 14px 16px;
+            color: #777;
+            font-size: .86rem;
+            line-height: 1.6;
+            margin-top: 18px;
+        }
+
         @media (max-width: 1000px) {
             .top-grid {
                 grid-template-columns: 1fr;
@@ -321,6 +354,14 @@
             .stats-grid-mini {
                 grid-template-columns: 1fr;
             }
+
+            .info-item.full {
+                grid-column: auto;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -340,7 +381,7 @@
             <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
             <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
             <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
-            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
+            <a href="{% url 'superadmin_customer_list' %}" class="active">👥 Customers</a>
             <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
             <a href="{% url 'home' %}">🌐 Visit Website</a>
             <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
@@ -352,7 +393,7 @@
         <header class="dashboard-header">
             <div>
                 <h1>Customer Detail</h1>
-                <p>Registered customer profile and order activity.</p>
+                <p>Registered customer profile, saved address and order activity.</p>
             </div>
 
             <a href="{% url 'superadmin_customer_list' %}" class="admin-link">
@@ -397,7 +438,9 @@
                                         {{ customer.username }}
                                     {% endif %}
                                 </h2>
+
                                 <p>@{{ customer.username }}</p>
+
                                 {% if customer.email %}
                                     <p>{{ customer.email }}</p>
                                 {% else %}
@@ -527,6 +570,14 @@
                                 {% endif %}
                             </div>
                         </div>
+
+                        <div class="profile-alert">
+                            {% if profile_completed %}
+                                ✅ Customer has saved phone and delivery address.
+                            {% else %}
+                                ⚠️ Customer profile is incomplete. Phone/address may be missing.
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -534,8 +585,93 @@
 
             <div class="detail-card">
                 <div class="detail-card-header">
+                    <h2>Saved Customer Address</h2>
+
+                    {% if profile_completed %}
+                        <span class="badge active">Complete</span>
+                    {% else %}
+                        <span class="badge inactive">Incomplete</span>
+                    {% endif %}
+                </div>
+
+                <div class="detail-body">
+                    {% if profile %}
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Phone</label>
+                                {% if profile.phone %}
+                                    <strong>{{ profile.phone }}</strong>
+                                {% else %}
+                                    <span>Not added</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>City</label>
+                                {% if profile.city %}
+                                    <strong>{{ profile.city }}</strong>
+                                {% else %}
+                                    <span>Not added</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>Pincode</label>
+                                {% if profile.pincode %}
+                                    <strong>{{ profile.pincode }}</strong>
+                                {% else %}
+                                    <span>Not added</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item">
+                                <label>Landmark</label>
+                                {% if profile.landmark %}
+                                    <strong>{{ profile.landmark }}</strong>
+                                {% else %}
+                                    <span>Not added</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="info-item full">
+                                <label>Full Address</label>
+                                {% if profile.full_address %}
+                                    <strong>{{ profile.full_address }}</strong>
+                                {% else %}
+                                    <span>No saved address</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">
+                            {% if profile.phone %}
+                                <a href="tel:{{ profile.phone }}" class="action-btn light">
+                                    📞 Call Customer
+                                </a>
+
+                                <a href="https://wa.me/91{{ profile.phone }}" target="_blank" class="action-btn success">
+                                    💬 WhatsApp
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div style="font-size:3rem;margin-bottom:12px">📍</div>
+                            <h3>No Profile Created</h3>
+                            <p>This customer has not saved phone/address details yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header">
                     <h2>Customer Orders</h2>
-                    <a href="{% url 'superadmin_order_list' %}?q={{ customer.username }}" style="font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none">
+
+                    <a
+                        href="{% url 'superadmin_order_list' %}?q={{ customer.username }}"
+                        style="font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none"
+                    >
                         All Orders →
                     </a>
                 </div>
@@ -600,13 +736,23 @@
                                 </td>
 
                                 <td>
-                                    <div style="display:flex;justify-content:flex-end">
+                                    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
                                         <a
                                             href="{% url 'superadmin_order_detail' order.id %}"
                                             class="mini-btn view"
                                         >
                                             👁️ View
                                         </a>
+
+                                        {% if order.id %}
+                                            <a
+                                                href="{% url 'superadmin_order_invoice' order.id %}"
+                                                target="_blank"
+                                                class="mini-btn invoice"
+                                            >
+                                                🧾 Invoice
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
