@@ -7,7 +7,7 @@
 <section class="page-banner">
     <div class="container">
         <h1>My Orders</h1>
-        <p>View your order history and latest delivery status.</p>
+        <p>View your order history, delivery status, cancel eligible orders, or reorder items.</p>
     </div>
 </section>
 
@@ -57,6 +57,7 @@
                         <div>
                             <h4>{{ order.product.name }}</h4>
                             <p>{{ order.product.category.name }}</p>
+
                             {% if order.product.brand %}
                                 <p>Brand: {{ order.product.brand }}</p>
                             {% endif %}
@@ -100,6 +101,24 @@
                         <p>{{ order.address }}</p>
                     </div>
 
+                    {% if order.status == "PENDING" or order.status == "CONFIRMED" %}
+                        <div class="order-note-box warning">
+                            ⚠️ You can cancel this order before it is packed.
+                        </div>
+                    {% elif order.status == "PACKED" or order.status == "OUT_FOR_DELIVERY" %}
+                        <div class="order-note-box info">
+                            📦 This order is already being prepared or delivered, so it cannot be cancelled now.
+                        </div>
+                    {% elif order.status == "DELIVERED" %}
+                        <div class="order-note-box success">
+                            ✅ This order has been delivered.
+                        </div>
+                    {% elif order.status == "CANCELLED" %}
+                        <div class="order-note-box danger">
+                            🚫 This order was cancelled.
+                        </div>
+                    {% endif %}
+
                     <div class="my-order-actions">
                         <a href="{% url 'product_detail' order.product.id %}" class="btn outline-btn">
                             View Product
@@ -108,6 +127,30 @@
                         <a href="{% url 'track_order' %}?phone={{ order.phone }}&order_id={{ order.id }}" class="btn primary-btn">
                             Track Order
                         </a>
+
+                        {% if order.product.is_active and order.product.stock > 0 %}
+                            <a href="{% url 'reorder_product' order.id %}" class="btn reorder-btn">
+                                🔁 Reorder
+                            </a>
+                        {% else %}
+                            <button type="button" class="btn disabled-btn" disabled>
+                                Reorder Unavailable
+                            </button>
+                        {% endif %}
+
+                        {% if order.status == "PENDING" or order.status == "CONFIRMED" %}
+                            <form
+                                method="post"
+                                action="{% url 'cancel_order' order.id %}"
+                                class="cancel-order-form"
+                                onsubmit="return confirm('Are you sure you want to cancel Order #{{ order.id }}? Stock will be restored after cancellation.');"
+                            >
+                                {% csrf_token %}
+                                <button type="submit" class="btn danger-btn">
+                                    ❌ Cancel Order
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
 
                 </div>
@@ -120,6 +163,7 @@
             <div style="font-size:3rem;margin-bottom:16px">📦</div>
             <h3>No orders yet</h3>
             <p>You have not placed any order from this account yet.</p>
+
             <a href="{% url 'product_list' %}" class="btn primary-btn" style="margin-top:20px">
                 Start Shopping
             </a>
@@ -127,5 +171,104 @@
     {% endif %}
 
 </section>
+
+<style>
+    .my-order-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .my-order-actions .btn,
+    .cancel-order-form .btn {
+        min-height: 42px;
+        justify-content: center;
+    }
+
+    .cancel-order-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .danger-btn {
+        background: rgba(192, 57, 43, .12);
+        color: var(--ruby);
+        border: 1.5px solid rgba(192, 57, 43, .22);
+        font-weight: 800;
+    }
+
+    .danger-btn:hover {
+        background: var(--ruby);
+        color: #fff;
+        border-color: var(--ruby);
+    }
+
+    .reorder-btn {
+        background: var(--teal);
+        color: #fff;
+        font-weight: 800;
+    }
+
+    .reorder-btn:hover {
+        background: var(--teal-dark);
+        color: #fff;
+    }
+
+    .disabled-btn {
+        background: var(--paper-dark);
+        color: #aaa;
+        border: 1.5px solid var(--cream);
+        cursor: not-allowed;
+        opacity: .75;
+    }
+
+    .order-note-box {
+        margin-top: 18px;
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        font-size: .86rem;
+        line-height: 1.5;
+        border: 1.5px solid transparent;
+    }
+
+    .order-note-box.warning {
+        background: rgba(212, 160, 23, .1);
+        color: #9a6f00;
+        border-color: rgba(212, 160, 23, .22);
+    }
+
+    .order-note-box.info {
+        background: rgba(18, 108, 105, .1);
+        color: var(--teal);
+        border-color: rgba(18, 108, 105, .18);
+    }
+
+    .order-note-box.success {
+        background: rgba(39, 116, 90, .1);
+        color: var(--jade);
+        border-color: rgba(39, 116, 90, .18);
+    }
+
+    .order-note-box.danger {
+        background: rgba(192, 57, 43, .1);
+        color: var(--ruby);
+        border-color: rgba(192, 57, 43, .18);
+    }
+
+    @media (max-width: 768px) {
+        .my-order-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .my-order-actions .btn,
+        .cancel-order-form,
+        .cancel-order-form .btn {
+            width: 100%;
+        }
+    }
+</style>
 
 {% endblock %}
