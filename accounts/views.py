@@ -637,7 +637,6 @@ def superadmin_customer_list(request):
 
     return render(request, "accounts/superadmin_customer_list.html", context)
 
-
 @login_required
 @user_passes_test(is_superadmin)
 def superadmin_customer_detail(request, pk):
@@ -646,6 +645,8 @@ def superadmin_customer_detail(request, pk):
         pk=pk,
         is_superuser=False,
     )
+
+    profile = getattr(customer, "customer_profile", None)
 
     orders = (
         Order.objects
@@ -662,8 +663,14 @@ def superadmin_customer_detail(request, pk):
     delivered_orders = orders.filter(status="DELIVERED").count()
     cancelled_orders = orders.filter(status="CANCELLED").count()
 
+    profile_completed = False
+    if profile:
+        profile_completed = bool(profile.phone and profile.address)
+
     context = {
         "customer": customer,
+        "profile": profile,
+        "profile_completed": profile_completed,
         "orders": orders,
         "total_spent": total_spent,
         "pending_orders": pending_orders,
@@ -672,7 +679,6 @@ def superadmin_customer_detail(request, pk):
     }
 
     return render(request, "accounts/superadmin_customer_detail.html", context)
-
 
 @login_required
 @user_passes_test(is_superadmin)
