@@ -37,6 +37,7 @@
                 {% if request.user.is_superuser %}
                     <a href="{% url 'superadmin_dashboard' %}" class="admin-btn">Dashboard</a>
                 {% else %}
+                    <a href="{% url 'customer_profile' %}" class="admin-btn">My Profile</a>
                     <a href="{% url 'my_orders' %}" class="admin-btn">My Orders</a>
                 {% endif %}
                 <a href="{% url 'logout' %}" class="login-btn">Logout</a>
@@ -44,6 +45,7 @@
                 <a href="{% url 'login' %}" class="login-btn">Login</a>
                 <a href="{% url 'signup' %}" class="admin-btn">Signup</a>
             {% endif %}
+
         </nav>
     </div>
 </header>

@@ -127,4 +127,6 @@ urlpatterns = [
         views.superadmin_export_bulk_requests_csv,
         name="superadmin_export_bulk_requests_csv"
     ),
+    
+    path("profile/", views.customer_profile, name="customer_profile"),
 ]

@@ -211,7 +211,10 @@ def home(request):
     else:
         categories = get_dummy_categories()
         dummy_products = get_dummy_products()
-        featured_products = [product for product in dummy_products if product.is_featured][:8]
+        featured_products = [
+            product for product in dummy_products
+            if product.is_featured
+        ][:8]
         latest_products = dummy_products[:12]
         using_dummy_content = True
 
@@ -221,6 +224,7 @@ def home(request):
         "latest_products": latest_products,
         "using_dummy_content": using_dummy_content,
     }
+
     return render(request, "store/home.html", context)
 
 
@@ -241,6 +245,7 @@ def product_list(request):
                 Q(name__icontains=query)
                 | Q(brand__icontains=query)
                 | Q(description__icontains=query)
+                | Q(category__name__icontains=query)
             )
 
         if category_slug:
@@ -262,21 +267,25 @@ def product_list(request):
         "selected_category": category_slug,
         "using_dummy_content": using_dummy_content,
     }
+
     return render(request, "store/product_list.html", context)
 
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True)
 
-    related_products = Product.objects.filter(
-        category=product.category,
-        is_active=True
-    ).exclude(id=product.id)[:4]
+    related_products = (
+        Product.objects
+        .filter(category=product.category, is_active=True)
+        .exclude(id=product.id)
+        .select_related("category")[:4]
+    )
 
     context = {
         "product": product,
         "related_products": related_products,
     }
+
     return render(request, "store/product_detail.html", context)
 
 
@@ -292,39 +301,55 @@ def order_product(request, product_id):
 
         if form.is_valid():
             with transaction.atomic():
-                product = Product.objects.select_for_update().get(
+                locked_product = Product.objects.select_for_update().get(
                     id=product.id,
                     is_active=True,
                 )
 
                 order = form.save(commit=False)
-                order.product = product
+                order.product = locked_product
 
                 if request.user.is_authenticated:
                     order.customer = request.user
 
-                if order.quantity > product.stock:
-                    messages.error(request, "Quantity is greater than available stock.")
-                    return redirect("order_product", product_id=product.id)
+                if order.quantity > locked_product.stock:
+                    messages.error(
+                        request,
+                        "Quantity is greater than available stock."
+                    )
+                    return redirect("order_product", product_id=locked_product.id)
 
                 order.save()
 
-                product.stock -= order.quantity
-                product.save(update_fields=["stock"])
+                locked_product.stock -= order.quantity
+                locked_product.save(update_fields=["stock"])
 
             messages.success(
                 request,
                 f"Your order has been placed successfully. Your Order ID is #{order.id}."
             )
+
             request.session["last_order_id"] = order.id
+
             return redirect("order_success")
 
     else:
         initial_data = {}
 
         if request.user.is_authenticated:
-            initial_data["name"] = request.user.get_full_name() or request.user.username
-            initial_data["phone"] = ""
+            initial_data["name"] = (
+                request.user.get_full_name()
+                or request.user.first_name
+                or request.user.username
+            )
+
+            profile = getattr(request.user, "customer_profile", None)
+
+            if profile:
+                initial_data["phone"] = profile.phone or ""
+                initial_data["address"] = profile.full_address() or ""
+            else:
+                initial_data["phone"] = ""
 
         form = OrderForm(initial=initial_data)
 
@@ -332,6 +357,7 @@ def order_product(request, product_id):
         "product": product,
         "form": form,
     }
+
     return render(request, "store/order_form.html", context)
 
 
@@ -353,7 +379,11 @@ def track_order(request):
     if phone or order_id:
         searched = True
 
-        orders = Order.objects.select_related("product", "product__category").all()
+        orders = (
+            Order.objects
+            .select_related("product", "product__category")
+            .all()
+        )
 
         if phone:
             orders = orders.filter(phone=phone)
@@ -378,6 +408,7 @@ def track_order(request):
         "phone": phone,
         "order_id": order_id,
     }
+
     return render(request, "store/track_order.html", context)
 
 
@@ -393,6 +424,7 @@ def my_orders(request):
     context = {
         "orders": orders,
     }
+
     return render(request, "store/my_orders.html", context)
 
 

@@ -1039,3 +1039,33 @@ def superadmin_export_bulk_requests_csv(request):
         ])
 
     return response
+
+
+# Add this import near other imports:
+from .forms import CustomerProfileForm
+from .models import CustomerProfile
+
+
+# Add this view after custom_logout or before superadmin views:
+
+@login_required
+def customer_profile(request):
+    if request.user.is_superuser:
+        return redirect("superadmin_dashboard")
+
+    profile, created = CustomerProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = CustomerProfileForm(request.POST, instance=profile, user=request.user)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect("customer_profile")
+    else:
+        form = CustomerProfileForm(instance=profile, user=request.user)
+
+    return render(request, "accounts/customer_profile.html", {
+        "form": form,
+        "profile": profile,
+    })
