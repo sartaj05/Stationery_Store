@@ -449,3 +449,51 @@ def contact(request):
     return render(request, "store/contact.html", {
         "form": form,
     })
+    
+    
+@login_required
+def cancel_order(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("product"),
+        id=order_id,
+        customer=request.user
+    )
+
+    if request.method == "POST":
+        if order.status not in ["PENDING", "CONFIRMED"]:
+            messages.error(request, "This order cannot be cancelled now.")
+            return redirect("my_orders")
+
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(id=order.product.id)
+
+            order.status = "CANCELLED"
+            order.admin_note = "Cancelled by customer."
+            order.save(update_fields=["status", "admin_note", "updated_at"])
+
+            product.stock += order.quantity
+            product.save(update_fields=["stock"])
+
+        messages.success(request, f"Order #{order.id} cancelled successfully.")
+        return redirect("my_orders")
+
+    return redirect("my_orders")
+
+
+@login_required
+def reorder_product(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("product"),
+        id=order_id,
+        customer=request.user
+    )
+
+    if not order.product.is_active:
+        messages.error(request, "This product is no longer available.")
+        return redirect("my_orders")
+
+    if order.product.stock <= 0:
+        messages.error(request, "This product is currently out of stock.")
+        return redirect("my_orders")
+
+    return redirect("order_product", product_id=order.product.id)
