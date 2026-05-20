@@ -1,0 +1,91 @@
+Step 16: Customer Profile + Address Management
+
+
+Customer profile model
+Saved phone number
+Saved delivery address
+City, pincode, landmark
+My Profile page
+Profile auto-fill during checkout
+My Profile navbar link
+Admin registration for profile debugging
+
+python manage.py makemigrations accounts
+python manage.py migrate
+python manage.py check
+python manage.py runserver 8080
+
+
+Login as normal customer
+Open My Profile
+Save phone/address
+Open any product order page
+Name, phone, and address should auto-fill
+Place order
+Open My Orders
+
+
+git status
+git add accounts/models.py accounts/admin.py accounts/forms.py templates/accounts/customer_profile.html
+git add accounts/urls.py accounts/views.py store/views.py templates/store/base.html
+git commit -m "Add customer profile and address management"
+git push origin main
+
+
+Start Step 17: Cart System + Checkout Flow
+
+
+/cart/
+cart/add/<product_id>/
+cart/update/<product_id>/
+cart/remove/<product_id>/
+cart/checkout/
+
+Add to cart
+Update quantity
+Remove item
+Cart total
+Checkout page
+Create orders from cart
+Reduce stock after checkout
+Clear cart after order
+Cart count in navbar
+Auto-fill checkout from customer profile if Step 16 is added
+
+
+
+/products/
+Add product to cart
+/cart/
+Update quantity
+Remove product
+Add again
+/cart/checkout/
+Submit checkout
+Stock decreases
+Cart clears
+Order success opens
+Superadmin can see created orders
+Customer can see orders in My Orders
+
+
+
+Important: your cart checkout uses transaction.atomic(), so make sure your store/views.py import includes:
+
+from django.db import transaction
+
+Then update settings.py context processors. Add:
+
+"store.context_processors.cart_context",
+
+inside:
+
+TEMPLATES[0]["OPTIONS"]["context_processors"]
+
+git status
+git add store/views.py store/urls.py store/context_processors.py DelhiStationery/settings.py
+git add templates/store/cart.html templates/store/cart_checkout.html
+git add templates/store/base.html templates/store/product_card.html templates/store/product_detail.html templates/store/order_success.html
+git add static/store/css/style.css
+git commit -m "Add cart system and checkout flow"
+git push origin main
