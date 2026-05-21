@@ -50,12 +50,61 @@
             </div>
         {% else %}
             <div class="card-actions">
-                <a href="{% url 'product_detail' product.id %}" class="btn small-btn">View Details</a>
+                <a href="{% url 'product_detail' product.id %}" class="btn small-btn">
+                    View Details
+                </a>
 
                 {% if product.stock > 0 %}
-                    <a href="{% url 'order_product' product.id %}" class="btn mini-primary-btn">Order Now</a>
+                    <a href="{% url 'order_product' product.id %}" class="btn mini-primary-btn">
+                        Order Now
+                    </a>
+
+                    <form method="post" action="{% url 'cart_add' product.id %}" class="card-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn mini-cart-btn">
+                            🛒 Cart
+                        </button>
+                    </form>
                 {% endif %}
             </div>
         {% endif %}
     </div>
 </div>
+
+<style>
+    .card-cart-form {
+        flex: 1;
+        margin: 0;
+    }
+
+    .mini-cart-btn {
+        width: 100%;
+        justify-content: center;
+        background: var(--teal);
+        color: #fff;
+        padding: 7px 14px;
+        font-size: .8rem;
+        font-weight: 700;
+        border-radius: 50px;
+        border: none;
+        cursor: pointer;
+        min-height: 36px;
+    }
+
+    .mini-cart-btn:hover {
+        background: var(--teal-dark);
+        color: #fff;
+    }
+
+    @media (max-width: 520px) {
+        .card-actions {
+            display: grid !important;
+            grid-template-columns: 1fr;
+        }
+
+        .card-cart-form {
+            width: 100%;
+        }
+    }
+</style>

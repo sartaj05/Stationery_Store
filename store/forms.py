@@ -248,3 +248,53 @@ class ProductRestockForm(forms.Form):
             "placeholder": "Enter stock quantity"
         })
     )
+    
+    
+# Add this import is already present in your store/forms.py:
+# from django import forms
+# from .models import Category, Product, Order, BulkOrderRequest
+
+# Add this class at the bottom of store/forms.py:
+
+class CartCheckoutForm(forms.Form):
+    name = forms.CharField(
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Enter your full name"
+        })
+    )
+
+    phone = forms.CharField(
+        max_length=15,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Enter 10 digit mobile number"
+        })
+    )
+
+    address = forms.CharField(
+        widget=forms.Textarea(attrs={
+            "class": "form-control",
+            "rows": 4,
+            "placeholder": "Enter complete delivery address"
+        })
+    )
+
+    payment_method = forms.ChoiceField(
+        choices=Order.PAYMENT_CHOICES,
+        widget=forms.Select(attrs={
+            "class": "form-control"
+        })
+    )
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone", "").strip()
+
+        if not phone.isdigit():
+            raise forms.ValidationError("Phone number must contain digits only.")
+
+        if len(phone) != 10:
+            raise forms.ValidationError("Enter a valid 10 digit mobile number.")
+
+        return phone

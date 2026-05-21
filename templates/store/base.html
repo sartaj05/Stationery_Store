@@ -29,6 +29,14 @@
         <nav class="nav-menu" data-nav-menu>
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'product_list' %}">Products</a>
+
+            <a href="{% url 'cart_detail' %}" class="cart-nav-link">
+                🛒 Cart
+                {% if global_cart_count > 0 %}
+                    <span class="cart-count">{{ global_cart_count }}</span>
+                {% endif %}
+            </a>
+
             <a href="{% url 'track_order' %}">Track Order</a>
             <a href="{% url 'about' %}">About</a>
             <a href="{% url 'contact' %}">Contact</a>
@@ -74,9 +82,23 @@
             <h4>Quick Links</h4>
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'product_list' %}">Products</a>
+            <a href="{% url 'cart_detail' %}">Cart</a>
             <a href="{% url 'track_order' %}">Track Order</a>
             <a href="{% url 'about' %}">About Us</a>
             <a href="{% url 'contact' %}">Contact</a>
+        </div>
+
+        <div>
+            <h4>Customer</h4>
+            {% if request.user.is_authenticated and not request.user.is_superuser %}
+                <a href="{% url 'customer_profile' %}">My Profile</a>
+                <a href="{% url 'my_orders' %}">My Orders</a>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'signup' %}">Signup</a>
+            {% endif %}
+            <a href="{% url 'cart_detail' %}">Shopping Cart</a>
+            <a href="{% url 'track_order' %}">Track Order</a>
         </div>
 
         <div>
@@ -94,6 +116,30 @@
         </div>
     </div>
 </footer>
+
+<style>
+    .cart-nav-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cart-count {
+        min-width: 20px;
+        height: 20px;
+        border-radius: 50px;
+        background: var(--saffron);
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .72rem;
+        font-weight: 900;
+        padding: 0 6px;
+        line-height: 1;
+    }
+</style>
 
 <script src="{% static 'store/js/main.js' %}"></script>
 </body>
