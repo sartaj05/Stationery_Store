@@ -27,7 +27,10 @@
         </div>
 
         <div class="detail-content">
-            <span class="product-category">{{ product.category.icon|default:"📦" }} {{ product.category.name }}</span>
+            <span class="product-category">
+                {{ product.category.icon|default:"📦" }} {{ product.category.name }}
+            </span>
+
             <h1>{{ product.name }}</h1>
 
             {% if product.brand %}
@@ -38,6 +41,7 @@
 
             <div class="price-row large">
                 <strong>₹{{ product.final_price }}</strong>
+
                 {% if product.discount_price %}
                     <del>₹{{ product.price }}</del>
                     <span class="save-badge">Save ₹{{ product.discount_amount }}</span>
@@ -46,10 +50,18 @@
 
             <div class="stock-panel">
                 <span>
-                    {% if product.stock <= 0 %}❌{% elif product.stock <= 5 %}⚠️{% else %}✅{% endif %}
+                    {% if product.stock <= 0 %}
+                        ❌
+                    {% elif product.stock <= 5 %}
+                        ⚠️
+                    {% else %}
+                        ✅
+                    {% endif %}
                 </span>
+
                 <div>
                     <small>Stock Status</small>
+
                     {% if product.stock <= 0 %}
                         <strong class="text-danger">Out of Stock</strong>
                     {% elif product.stock <= 5 %}
@@ -62,12 +74,43 @@
 
             <div class="detail-actions">
                 {% if product.stock > 0 %}
-                    <a href="{% url 'order_product' product.id %}" class="btn primary-btn">🛒 Order Now</a>
+                    <a href="{% url 'order_product' product.id %}" class="btn primary-btn">
+                        🛒 Order Now
+                    </a>
+
+                    <form method="post" action="{% url 'cart_add' product.id %}" class="detail-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn teal-btn">
+                            🛍️ Add to Cart
+                        </button>
+                    </form>
                 {% else %}
-                    <button class="btn disabled-btn" disabled>Out of Stock</button>
+                    <button class="btn disabled-btn" disabled>
+                        Out of Stock
+                    </button>
                 {% endif %}
 
-                <a href="{% url 'contact' %}" class="btn outline-btn">📞 Ask About Product</a>
+                <a href="{% url 'contact' %}" class="btn outline-btn">
+                    📞 Ask About Product
+                </a>
+            </div>
+
+            <div class="product-trust-box">
+                <div>
+                    <strong>🚚 Delhi Delivery</strong>
+                    <span>Fast local delivery available.</span>
+                </div>
+
+                <div>
+                    <strong>💰 COD Available</strong>
+                    <span>Pay after confirmation.</span>
+                </div>
+
+                <div>
+                    <strong>📞 Store Support</strong>
+                    <span>Call/WhatsApp support for bulk orders.</span>
+                </div>
             </div>
         </div>
     </div>
