@@ -497,3 +497,233 @@ def reorder_product(request, order_id):
         return redirect("my_orders")
 
     return redirect("order_product", product_id=order.product.id)
+
+# Add CartCheckoutForm in your import:
+# from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
+
+
+def _get_cart(request):
+    return request.session.get("cart", {})
+
+
+def _save_cart(request, cart):
+    request.session["cart"] = cart
+    request.session.modified = True
+
+
+def _cart_count(cart):
+    return sum(int(item.get("quantity", 0)) for item in cart.values())
+
+
+def _build_cart_items(cart):
+    product_ids = []
+
+    for product_id in cart.keys():
+        try:
+            product_ids.append(int(product_id))
+        except (TypeError, ValueError):
+            continue
+
+    products = Product.objects.filter(
+        id__in=product_ids,
+        is_active=True,
+    ).select_related("category")
+
+    product_map = {str(product.id): product for product in products}
+
+    items = []
+    subtotal = Decimal("0.00")
+
+    for product_id, item in cart.items():
+        product = product_map.get(str(product_id))
+
+        if not product:
+            continue
+
+        quantity = int(item.get("quantity", 1))
+
+        if quantity < 1:
+            quantity = 1
+
+        line_total = product.final_price() * quantity
+        subtotal += line_total
+
+        items.append({
+            "product": product,
+            "quantity": quantity,
+            "line_total": line_total,
+        })
+
+    return items, subtotal
+
+
+def _get_profile_initial_data(request):
+    initial_data = {}
+
+    if request.user.is_authenticated:
+        initial_data["name"] = (
+            request.user.get_full_name()
+            or request.user.first_name
+            or request.user.username
+        )
+
+        profile = getattr(request.user, "customer_profile", None)
+
+        if profile:
+            initial_data["phone"] = profile.phone or ""
+            initial_data["address"] = profile.full_address() or ""
+
+    return initial_data
+
+
+def cart_add(request, product_id):
+    product = get_object_or_404(Product, id=product_id, is_active=True)
+
+    if product.stock <= 0:
+        messages.error(request, "This product is currently out of stock.")
+        return redirect("product_detail", product_id=product.id)
+
+    cart = _get_cart(request)
+    product_key = str(product.id)
+
+    current_quantity = int(cart.get(product_key, {}).get("quantity", 0))
+    new_quantity = current_quantity + 1
+
+    if new_quantity > product.stock:
+        messages.error(request, "You cannot add more than available stock.")
+        return redirect("cart_detail")
+
+    cart[product_key] = {"quantity": new_quantity}
+    _save_cart(request, cart)
+
+    messages.success(request, f"{product.name} added to cart.")
+
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
+
+    return redirect("cart_detail")
+
+
+def cart_detail(request):
+    cart = _get_cart(request)
+    cart_items, subtotal = _build_cart_items(cart)
+
+    return render(request, "store/cart.html", {
+        "cart_items": cart_items,
+        "subtotal": subtotal,
+        "cart_count": _cart_count(cart),
+    })
+
+
+def cart_update(request, product_id):
+    product = get_object_or_404(Product, id=product_id, is_active=True)
+
+    if request.method == "POST":
+        quantity = request.POST.get("quantity", "1")
+
+        try:
+            quantity = int(quantity)
+        except ValueError:
+            quantity = 1
+
+        cart = _get_cart(request)
+        product_key = str(product.id)
+
+        if quantity <= 0:
+            cart.pop(product_key, None)
+            messages.success(request, "Item removed from cart.")
+        else:
+            if quantity > product.stock:
+                quantity = product.stock
+                messages.warning(request, f"Quantity adjusted to available stock: {product.stock}.")
+
+            cart[product_key] = {"quantity": quantity}
+            messages.success(request, "Cart updated successfully.")
+
+        _save_cart(request, cart)
+
+    return redirect("cart_detail")
+
+
+def cart_remove(request, product_id):
+    cart = _get_cart(request)
+    product_key = str(product_id)
+
+    if product_key in cart:
+        cart.pop(product_key, None)
+        _save_cart(request, cart)
+        messages.success(request, "Item removed from cart.")
+
+    return redirect("cart_detail")
+
+
+@login_required
+def cart_checkout(request):
+    cart = _get_cart(request)
+    cart_items, subtotal = _build_cart_items(cart)
+
+    if not cart_items:
+        messages.error(request, "Your cart is empty.")
+        return redirect("cart_detail")
+
+    initial_data = _get_profile_initial_data(request)
+
+    if request.method == "POST":
+        form = CartCheckoutForm(request.POST)
+
+        if form.is_valid():
+            created_orders = []
+
+            with transaction.atomic():
+                for item in cart_items:
+                    product = Product.objects.select_for_update().get(
+                        id=item["product"].id,
+                        is_active=True,
+                    )
+
+                    quantity = item["quantity"]
+
+                    if quantity > product.stock:
+                        messages.error(
+                            request,
+                            f"{product.name} has only {product.stock} items available."
+                        )
+                        return redirect("cart_detail")
+
+                    order = Order.objects.create(
+                        customer=request.user,
+                        name=form.cleaned_data["name"],
+                        phone=form.cleaned_data["phone"],
+                        address=form.cleaned_data["address"],
+                        product=product,
+                        quantity=quantity,
+                        payment_method=form.cleaned_data["payment_method"],
+                    )
+
+                    product.stock -= quantity
+                    product.save(update_fields=["stock"])
+
+                    created_orders.append(order)
+
+            _save_cart(request, {})
+
+            order_ids = [str(order.id) for order in created_orders]
+            request.session["last_order_id"] = created_orders[0].id if created_orders else None
+            request.session["last_cart_order_ids"] = order_ids
+
+            messages.success(
+                request,
+                f"Checkout successful. Orders created: {', '.join('#' + oid for oid in order_ids)}."
+            )
+
+            return redirect("order_success")
+    else:
+        form = CartCheckoutForm(initial=initial_data)
+
+    return render(request, "store/cart_checkout.html", {
+        "form": form,
+        "cart_items": cart_items,
+        "subtotal": subtotal,
+        "cart_count": _cart_count(cart),
+    })

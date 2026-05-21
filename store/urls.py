@@ -16,4 +16,9 @@ urlpatterns = [
     path("contact/", views.contact, name="contact"),
     path("orders/<int:order_id>/cancel/", views.cancel_order, name="cancel_order"),
     path("orders/<int:order_id>/reorder/", views.reorder_product, name="reorder_product"),
+    path("cart/", views.cart_detail, name="cart_detail"),
+    path("cart/add/<int:product_id>/", views.cart_add, name="cart_add"),
+    path("cart/update/<int:product_id>/", views.cart_update, name="cart_update"),
+    path("cart/remove/<int:product_id>/", views.cart_remove, name="cart_remove"),
+    path("cart/checkout/", views.cart_checkout, name="cart_checkout"),
 ]
