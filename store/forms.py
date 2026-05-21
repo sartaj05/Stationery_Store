@@ -248,13 +248,7 @@ class ProductRestockForm(forms.Form):
             "placeholder": "Enter stock quantity"
         })
     )
-    
-    
-# Add this import is already present in your store/forms.py:
-# from django import forms
-# from .models import Category, Product, Order, BulkOrderRequest
 
-# Add this class at the bottom of store/forms.py:
 
 class CartCheckoutForm(forms.Form):
     name = forms.CharField(

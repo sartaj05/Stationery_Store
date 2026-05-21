@@ -8,13 +8,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
 from .models import Product, Category, Order
-from .forms import OrderForm, BulkOrderRequestForm
+from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
 
 
 # ============================================================
 # DUMMY PUBLIC CONTENT
-# Shows only when no active real products exist.
-# Once admin/superadmin adds real active product, dummy disappears.
 # ============================================================
 
 def _dummy_category(name, slug, icon):
@@ -192,6 +190,99 @@ def _filter_dummy_products(products, query=None, category_slug=None):
 
 
 # ============================================================
+# CART HELPERS
+# ============================================================
+
+def _get_cart(request):
+    return request.session.get("cart", {})
+
+
+def _save_cart(request, cart):
+    request.session["cart"] = cart
+    request.session.modified = True
+
+
+def _cart_count(cart):
+    total = 0
+
+    for item in cart.values():
+        try:
+            total += int(item.get("quantity", 0))
+        except (TypeError, ValueError):
+            continue
+
+    return total
+
+
+def _build_cart_items(cart):
+    product_ids = []
+
+    for product_id in cart.keys():
+        try:
+            product_ids.append(int(product_id))
+        except (TypeError, ValueError):
+            continue
+
+    products = (
+        Product.objects
+        .filter(id__in=product_ids, is_active=True)
+        .select_related("category")
+    )
+
+    product_map = {
+        str(product.id): product
+        for product in products
+    }
+
+    items = []
+    subtotal = Decimal("0.00")
+
+    for product_id, item in cart.items():
+        product = product_map.get(str(product_id))
+
+        if not product:
+            continue
+
+        try:
+            quantity = int(item.get("quantity", 1))
+        except (TypeError, ValueError):
+            quantity = 1
+
+        if quantity < 1:
+            quantity = 1
+
+        line_total = product.final_price() * quantity
+        subtotal += line_total
+
+        items.append({
+            "product": product,
+            "quantity": quantity,
+            "line_total": line_total,
+        })
+
+    return items, subtotal
+
+
+def _get_profile_initial_data(request):
+    initial_data = {}
+
+    if request.user.is_authenticated:
+        initial_data["name"] = (
+            request.user.get_full_name()
+            or request.user.first_name
+            or request.user.username
+        )
+
+        profile = getattr(request.user, "customer_profile", None)
+
+        if profile:
+            initial_data["phone"] = profile.phone or ""
+            initial_data["address"] = profile.full_address() or ""
+
+    return initial_data
+
+
+# ============================================================
 # PUBLIC STORE VIEWS
 # ============================================================
 
@@ -218,14 +309,12 @@ def home(request):
         latest_products = dummy_products[:12]
         using_dummy_content = True
 
-    context = {
+    return render(request, "store/home.html", {
         "categories": categories,
         "featured_products": featured_products,
         "latest_products": latest_products,
         "using_dummy_content": using_dummy_content,
-    }
-
-    return render(request, "store/home.html", context)
+    })
 
 
 def product_list(request):
@@ -260,15 +349,13 @@ def product_list(request):
         )
         using_dummy_content = True
 
-    context = {
+    return render(request, "store/product_list.html", {
         "products": products,
         "categories": categories,
         "query": query,
         "selected_category": category_slug,
         "using_dummy_content": using_dummy_content,
-    }
-
-    return render(request, "store/product_list.html", context)
+    })
 
 
 def product_detail(request, product_id):
@@ -281,12 +368,10 @@ def product_detail(request, product_id):
         .select_related("category")[:4]
     )
 
-    context = {
+    return render(request, "store/product_detail.html", {
         "product": product,
         "related_products": related_products,
-    }
-
-    return render(request, "store/product_detail.html", context)
+    })
 
 
 def order_product(request, product_id):
@@ -324,48 +409,33 @@ def order_product(request, product_id):
                 locked_product.stock -= order.quantity
                 locked_product.save(update_fields=["stock"])
 
+            request.session["last_order_id"] = order.id
+            request.session["last_cart_order_ids"] = []
+
             messages.success(
                 request,
                 f"Your order has been placed successfully. Your Order ID is #{order.id}."
             )
 
-            request.session["last_order_id"] = order.id
-
             return redirect("order_success")
 
     else:
-        initial_data = {}
-
-        if request.user.is_authenticated:
-            initial_data["name"] = (
-                request.user.get_full_name()
-                or request.user.first_name
-                or request.user.username
-            )
-
-            profile = getattr(request.user, "customer_profile", None)
-
-            if profile:
-                initial_data["phone"] = profile.phone or ""
-                initial_data["address"] = profile.full_address() or ""
-            else:
-                initial_data["phone"] = ""
-
+        initial_data = _get_profile_initial_data(request)
         form = OrderForm(initial=initial_data)
 
-    context = {
+    return render(request, "store/order_form.html", {
         "product": product,
         "form": form,
-    }
-
-    return render(request, "store/order_form.html", context)
+    })
 
 
 def order_success(request):
     last_order_id = request.session.get("last_order_id")
+    cart_order_ids = request.session.get("last_cart_order_ids", [])
 
     return render(request, "store/order_success.html", {
         "last_order_id": last_order_id,
+        "cart_order_ids": cart_order_ids,
     })
 
 
@@ -402,14 +472,12 @@ def track_order(request):
                 "No order found with the provided details. Please check your phone number or order ID."
             )
 
-    context = {
+    return render(request, "store/track_order.html", {
         "orders": orders,
         "searched": searched,
         "phone": phone,
         "order_id": order_id,
-    }
-
-    return render(request, "store/track_order.html", context)
+    })
 
 
 @login_required
@@ -421,11 +489,9 @@ def my_orders(request):
         .order_by("-created_at")
     )
 
-    context = {
+    return render(request, "store/my_orders.html", {
         "orders": orders,
-    }
-
-    return render(request, "store/my_orders.html", context)
+    })
 
 
 def about(request):
@@ -449,14 +515,18 @@ def contact(request):
     return render(request, "store/contact.html", {
         "form": form,
     })
-    
-    
+
+
+# ============================================================
+# CUSTOMER ORDER CANCEL + REORDER
+# ============================================================
+
 @login_required
 def cancel_order(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("product"),
         id=order_id,
-        customer=request.user
+        customer=request.user,
     )
 
     if request.method == "POST":
@@ -485,7 +555,7 @@ def reorder_product(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("product"),
         id=order_id,
-        customer=request.user
+        customer=request.user,
     )
 
     if not order.product.is_active:
@@ -496,85 +566,32 @@ def reorder_product(request, order_id):
         messages.error(request, "This product is currently out of stock.")
         return redirect("my_orders")
 
-    return redirect("order_product", product_id=order.product.id)
+    cart = _get_cart(request)
+    product_key = str(order.product.id)
 
-# Add CartCheckoutForm in your import:
-# from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
+    current_quantity = int(cart.get(product_key, {}).get("quantity", 0))
+    new_quantity = current_quantity + order.quantity
 
-
-def _get_cart(request):
-    return request.session.get("cart", {})
-
-
-def _save_cart(request, cart):
-    request.session["cart"] = cart
-    request.session.modified = True
-
-
-def _cart_count(cart):
-    return sum(int(item.get("quantity", 0)) for item in cart.values())
-
-
-def _build_cart_items(cart):
-    product_ids = []
-
-    for product_id in cart.keys():
-        try:
-            product_ids.append(int(product_id))
-        except (TypeError, ValueError):
-            continue
-
-    products = Product.objects.filter(
-        id__in=product_ids,
-        is_active=True,
-    ).select_related("category")
-
-    product_map = {str(product.id): product for product in products}
-
-    items = []
-    subtotal = Decimal("0.00")
-
-    for product_id, item in cart.items():
-        product = product_map.get(str(product_id))
-
-        if not product:
-            continue
-
-        quantity = int(item.get("quantity", 1))
-
-        if quantity < 1:
-            quantity = 1
-
-        line_total = product.final_price() * quantity
-        subtotal += line_total
-
-        items.append({
-            "product": product,
-            "quantity": quantity,
-            "line_total": line_total,
-        })
-
-    return items, subtotal
-
-
-def _get_profile_initial_data(request):
-    initial_data = {}
-
-    if request.user.is_authenticated:
-        initial_data["name"] = (
-            request.user.get_full_name()
-            or request.user.first_name
-            or request.user.username
+    if new_quantity > order.product.stock:
+        new_quantity = order.product.stock
+        messages.warning(
+            request,
+            f"Reorder quantity adjusted to available stock: {order.product.stock}."
         )
 
-        profile = getattr(request.user, "customer_profile", None)
+    cart[product_key] = {
+        "quantity": new_quantity,
+    }
 
-        if profile:
-            initial_data["phone"] = profile.phone or ""
-            initial_data["address"] = profile.full_address() or ""
+    _save_cart(request, cart)
 
-    return initial_data
+    messages.success(request, f"{order.product.name} added to cart again.")
+    return redirect("cart_detail")
 
+
+# ============================================================
+# CART VIEWS
+# ============================================================
 
 def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True)
@@ -593,12 +610,16 @@ def cart_add(request, product_id):
         messages.error(request, "You cannot add more than available stock.")
         return redirect("cart_detail")
 
-    cart[product_key] = {"quantity": new_quantity}
+    cart[product_key] = {
+        "quantity": new_quantity,
+    }
+
     _save_cart(request, cart)
 
     messages.success(request, f"{product.name} added to cart.")
 
     next_url = request.POST.get("next") or request.GET.get("next")
+
     if next_url:
         return redirect(next_url)
 
@@ -636,9 +657,15 @@ def cart_update(request, product_id):
         else:
             if quantity > product.stock:
                 quantity = product.stock
-                messages.warning(request, f"Quantity adjusted to available stock: {product.stock}.")
+                messages.warning(
+                    request,
+                    f"Quantity adjusted to available stock: {product.stock}."
+                )
 
-            cart[product_key] = {"quantity": quantity}
+            cart[product_key] = {
+                "quantity": quantity,
+            }
+
             messages.success(request, "Cart updated successfully.")
 
         _save_cart(request, cart)
@@ -708,7 +735,11 @@ def cart_checkout(request):
 
             _save_cart(request, {})
 
-            order_ids = [str(order.id) for order in created_orders]
+            order_ids = [
+                str(order.id)
+                for order in created_orders
+            ]
+
             request.session["last_order_id"] = created_orders[0].id if created_orders else None
             request.session["last_cart_order_ids"] = order_ids
 
