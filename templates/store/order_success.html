@@ -7,13 +7,25 @@
 <section class="success-section">
     <div class="success-card">
         <div class="success-icon">🎉</div>
+
         <h1>Order Placed Successfully!</h1>
+
         <p>
             Thank you for ordering from Delhi Stationery.
             Our team will contact you within 2 hours for order confirmation and delivery details.
         </p>
 
-        {% if last_order_id %}
+        {% if cart_order_ids %}
+            <div class="order-id-box">
+                <span>Your Cart Order IDs</span>
+
+                <div class="multi-order-list">
+                    {% for order_id in cart_order_ids %}
+                        <strong>#{{ order_id }}</strong>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif last_order_id %}
             <div class="order-id-box">
                 <span>Your Order ID</span>
                 <strong>#{{ last_order_id }}</strong>
@@ -22,6 +34,7 @@
 
         <div class="next-box">
             <strong>📞 What happens next?</strong>
+
             <ul>
                 <li>✅ Order received and recorded</li>
                 <li>📞 Our team will call to confirm delivery time</li>
@@ -33,10 +46,49 @@
 
         <div class="success-actions">
             <a href="{% url 'track_order' %}" class="btn primary-btn">📦 Track Order</a>
+
+            {% if request.user.is_authenticated and not request.user.is_superuser %}
+                <a href="{% url 'my_orders' %}" class="btn outline-btn">🧾 My Orders</a>
+            {% endif %}
+
             <a href="{% url 'product_list' %}" class="btn outline-btn">🛒 Continue Shopping</a>
             <a href="{% url 'home' %}" class="btn outline-btn">← Go Home</a>
         </div>
     </div>
 </section>
+
+<style>
+    .multi-order-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    .multi-order-list strong {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--paper-dark);
+        color: var(--ink);
+        border: 1px solid var(--cream);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: 'DM Mono', monospace;
+    }
+
+    @media (max-width: 640px) {
+        .success-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        .success-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
 
 {% endblock %}
