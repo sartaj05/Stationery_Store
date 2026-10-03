@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of a colorful pencil set</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fff0d9"/><stop offset="1" stop-color="#f1e7fb"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="927" cy="177" r="126" fill="#fff" opacity=".48"/><ellipse cx="610" cy="713" rx="350" ry="44" fill="#594a67" opacity=".13"/>
+  <g transform="rotate(-18 600 460)">
+    <g fill="#e86f51"><rect x="337" y="318" width="76" height="330" rx="14"/><path d="M337 648h76l-38 76z"/></g>
+    <g fill="#f0b64d"><rect x="423" y="280" width="76" height="330" rx="14"/><path d="M423 610h76l-38 76z"/></g>
+    <g fill="#66a995"><rect x="509" y="250" width="76" height="330" rx="14"/><path d="M509 580h76l-38 76z"/></g>
+    <g fill="#668cba"><rect x="595" y="275" width="76" height="330" rx="14"/><path d="M595 605h76l-38 76z"/></g>
+    <g fill="#a77cbd"><rect x="681" y="310" width="76" height="330" rx="14"/><path d="M681 640h76l-38 76z"/></g>
+    <g fill="#e78cac"><rect x="767" y="335" width="76" height="330" rx="14"/><path d="M767 665h76l-38 76z"/></g>
+    <path d="M352 359h46M438 321h46M524 291h46M610 316h46M696 351h46M782 376h46" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".6"/>
+  </g><text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#594a67">COLOUR PENCILS</text>
+</svg>

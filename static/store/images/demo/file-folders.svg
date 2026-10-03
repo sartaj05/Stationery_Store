@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of a set of office file folders</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fff2da"/><stop offset="1" stop-color="#e3f1ec"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="920" cy="176" r="130" fill="#fff" opacity=".45"/><ellipse cx="610" cy="712" rx="360" ry="48" fill="#315550" opacity=".13"/>
+  <g transform="rotate(-6 600 470)"><path d="M300 378h198l47 50h333q24 0 24 24v226H300z" fill="#668cba"/><path d="M273 340h195l46 48h350q25 0 25 25v225H273z" fill="#f0a34f"/><path d="M246 307h198l46 47h333q25 0 25 25v220H246z" fill="#66a995"/>
+  <path d="M271 411h550v167H271z" fill="#fff" opacity=".77"/><path d="M324 458h202M324 494h278" stroke="#a7c8be" stroke-width="11" stroke-linecap="round"/><rect x="655" y="441" width="98" height="52" rx="16" fill="#f8d395"/><path d="M681 466h47" stroke="#9f6b2f" stroke-width="7" stroke-linecap="round"/></g>
+  <text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#315550">FILE FOLDERS</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of a long register book</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#e4f3ef"/><stop offset="1" stop-color="#fff0d9"/></linearGradient><linearGradient id="cover" x2="1" y2="1"><stop stop-color="#668cba"/><stop offset="1" stop-color="#3e5d82"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="929" cy="180" r="125" fill="#fff" opacity=".46"/><ellipse cx="610" cy="706" rx="345" ry="50" fill="#344e77" opacity=".14"/>
+  <g transform="rotate(-9 600 460)"><path d="M280 314q18-28 51-28h516q31 0 31 32v337q0 28-31 28H331q-51 0-51-48z" fill="url(#cover)"/><path d="M324 329h500q21 0 21 23v276q0 18-21 18H334q-29 0-29-29V353q0-24 19-24" fill="#fffdf8"/><path d="M354 386h430M354 431h430M354 476h430M354 521h430M354 566h430" stroke="#bdd7d1" stroke-width="9" stroke-linecap="round"/><path d="M349 318v339" stroke="#e58b52" stroke-width="9" stroke-dasharray="3 19" stroke-linecap="round"/><rect x="620" y="248" width="165" height="47" rx="14" fill="#f1bd64"/><text x="703" y="279" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#4a5660">REGISTER</text></g>
+  <text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#344e77">LONG REGISTER</text>
+</svg>

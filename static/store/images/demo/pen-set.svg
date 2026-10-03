@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of a set of colorful ball pens</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#e4f3ef"/><stop offset="1" stop-color="#fff0d9"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="930" cy="190" r="130" fill="#fff" opacity=".5"/><ellipse cx="605" cy="694" rx="350" ry="48" fill="#315550" opacity=".12"/>
+  <g transform="rotate(-24 600 460)">
+    <g><rect x="375" y="232" width="86" height="426" rx="40" fill="#e76f51"/><path d="M375 276q0-44 43-44h43v57h-86z" fill="#bd4d3e"/><rect x="401" y="307" width="34" height="245" rx="17" fill="#fff" opacity=".22"/><path d="M375 658h86l-43 92z" fill="#d9dfe3"/><path d="M410 700h16l-8 19z" fill="#576675"/></g>
+    <g transform="translate(135 -35)"><rect x="375" y="232" width="86" height="426" rx="40" fill="#5b83aa"/><path d="M375 276q0-44 43-44h43v57h-86z" fill="#42668a"/><rect x="401" y="307" width="34" height="245" rx="17" fill="#fff" opacity=".22"/><path d="M375 658h86l-43 92z" fill="#d9dfe3"/><path d="M410 700h16l-8 19z" fill="#576675"/></g>
+    <g transform="translate(270 20)"><rect x="375" y="232" width="86" height="426" rx="40" fill="#66a995"/><path d="M375 276q0-44 43-44h43v57h-86z" fill="#438678"/><rect x="401" y="307" width="34" height="245" rx="17" fill="#fff" opacity=".22"/><path d="M375 658h86l-43 92z" fill="#d9dfe3"/><path d="M410 700h16l-8 19z" fill="#576675"/></g>
+  </g><text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#315550">PEN SET</text>
+</svg>

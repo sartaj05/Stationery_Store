@@ -84,7 +84,7 @@ def get_dummy_products():
             price="240",
             discount_price="199",
             stock=25,
-            image_url="https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/notebook-pack.svg",
             is_featured=True,
         ),
         _dummy_product(
@@ -95,7 +95,7 @@ def get_dummy_products():
             price="120",
             discount_price="99",
             stock=60,
-            image_url="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/pen-set.svg",
             is_featured=True,
         ),
         _dummy_product(
@@ -106,7 +106,7 @@ def get_dummy_products():
             price="180",
             discount_price="149",
             stock=18,
-            image_url="https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/geometry-box.svg",
             is_featured=True,
         ),
         _dummy_product(
@@ -117,7 +117,7 @@ def get_dummy_products():
             price="300",
             discount_price="249",
             stock=12,
-            image_url="https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/file-folders.svg",
             is_featured=True,
         ),
         _dummy_product(
@@ -128,7 +128,7 @@ def get_dummy_products():
             price="90",
             discount_price="75",
             stock=30,
-            image_url="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/exam-pad.svg",
             is_featured=False,
         ),
         _dummy_product(
@@ -139,7 +139,7 @@ def get_dummy_products():
             price="220",
             discount_price="179",
             stock=9,
-            image_url="https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/colour-pencils.svg",
             is_featured=False,
         ),
         _dummy_product(
@@ -150,7 +150,7 @@ def get_dummy_products():
             price="160",
             discount_price="135",
             stock=22,
-            image_url="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/register-book.svg",
             is_featured=False,
         ),
         _dummy_product(
@@ -161,7 +161,7 @@ def get_dummy_products():
             price="180",
             discount_price="150",
             stock=14,
-            image_url="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80",
+            image_url="/static/store/images/demo/stapler-set.svg",
             is_featured=False,
         ),
     ]

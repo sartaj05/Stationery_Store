@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of an office stapler with staple pins</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fff0d9"/><stop offset="1" stop-color="#e5f2ed"/></linearGradient><linearGradient id="stapler" x2="1" y2="1"><stop stop-color="#e77a58"/><stop offset="1" stop-color="#b9473b"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="923" cy="175" r="124" fill="#fff" opacity=".47"/><ellipse cx="600" cy="690" rx="350" ry="46" fill="#594a47" opacity=".14"/>
+  <g transform="rotate(-7 600 470)"><path d="M318 494h509q39 0 39 38v74H318q-38 0-38-38v-36q0-38 38-38" fill="#454f58"/><path d="M338 452l84-148q21-38 62-38h264q48 0 66 45l43 112-83 34-47-96H497l-67 117z" fill="url(#stapler)"/><path d="M450 353h240" stroke="#fff" stroke-width="13" stroke-linecap="round" opacity=".34"/><circle cx="791" cy="472" r="18" fill="#f2c265"/>
+  <rect x="734" y="624" width="126" height="80" rx="13" fill="#dce8e5"/><path d="M755 649h82M755 668h82M755 687h82" stroke="#778c88" stroke-width="7" stroke-linecap="round"/></g>
+  <text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#594a47">STAPLER AND PINS</text>
+</svg>

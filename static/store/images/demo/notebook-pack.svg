@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">Illustration of a colorful notebook pack</title>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fff6e8"/><stop offset="1" stop-color="#dcefeb"/></linearGradient><linearGradient id="cover" x2="1" y2="1"><stop stop-color="#ffbd65"/><stop offset="1" stop-color="#ef7c36"/></linearGradient></defs>
+  <rect width="1200" height="900" rx="42" fill="url(#bg)"/><circle cx="965" cy="170" r="125" fill="#fff" opacity=".48"/>
+  <ellipse cx="610" cy="716" rx="360" ry="58" fill="#324b46" opacity=".12"/>
+  <g transform="rotate(-9 570 480)"><rect x="270" y="236" width="360" height="500" rx="24" fill="#5a7fa2"/><rect x="298" y="215" width="360" height="500" rx="24" fill="#f5e3bd"/><rect x="326" y="194" width="360" height="500" rx="24" fill="url(#cover)"/><rect x="362" y="252" width="288" height="386" rx="12" fill="#fff8eb"/><path d="M392 322h228M392 364h228M392 406h228M392 448h228" stroke="#b7d5cf" stroke-width="9" stroke-linecap="round"/><rect x="392" y="490" width="154" height="76" rx="14" fill="#dcefeb"/><circle cx="607" cy="285" r="17" fill="#e36d46"/></g>
+  <path d="M850 290l14 36 38 14-38 14-14 36-14-36-38-14 38-14z" fill="#fff" opacity=".8"/><text x="600" y="812" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="5" fill="#315550">NOTEBOOKS</text>
+</svg>
