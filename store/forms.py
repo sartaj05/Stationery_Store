@@ -1,5 +1,14 @@
 from django import forms
-from .models import Category, DeliveryZone, Product, Order, BulkOrderRequest
+from django.forms import inlineformset_factory
+
+from .models import (
+    BulkOrderRequest,
+    BulkQuoteLine,
+    Category,
+    DeliveryZone,
+    Order,
+    Product,
+)
 from .services import get_delivery_quote
 
 
@@ -309,7 +318,7 @@ class OrderStatusForm(forms.ModelForm):
 class BulkOrderRequestForm(forms.ModelForm):
     class Meta:
         model = BulkOrderRequest
-        fields = ["name", "phone", "organisation", "requirement"]
+        fields = ["name", "phone", "email", "organisation", "requirement"]
 
         widgets = {
             "name": forms.TextInput(attrs={
@@ -319,6 +328,10 @@ class BulkOrderRequestForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "Enter 10 digit mobile number"
+            }),
+            "email": forms.EmailInput(attrs={
+                "class": "form-control",
+                "placeholder": "Email to receive your quote (optional)",
             }),
             "organisation": forms.TextInput(attrs={
                 "class": "form-control",
@@ -356,6 +369,84 @@ class BulkOrderStatusForm(forms.ModelForm):
                 "placeholder": "Internal follow-up note"
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        choices = list(self.fields["status"].choices)
+        self.fields["status"].choices = [
+            choice for choice in choices
+            if choice[0] not in {"QUOTED", "CONVERTED"}
+        ]
+        if self.instance.status in {"QUOTED", "CONVERTED"}:
+            self.fields["status"].choices.append(
+                next(choice for choice in choices if choice[0] == self.instance.status)
+            )
+        if self.instance.status == "CONVERTED":
+            self.fields["status"].disabled = True
+
+
+class BulkQuoteLineForm(forms.ModelForm):
+    class Meta:
+        model = BulkQuoteLine
+        fields = ["product", "quantity", "unit_price"]
+        widgets = {
+            "product": forms.Select(attrs={"class": "form-control"}),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "min": 1}),
+            "unit_price": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": 0,
+                "step": "0.01",
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product"].queryset = Product.objects.filter(is_active=True).order_by("name")
+        self.fields["product"].required = True
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get("quantity")
+        if quantity is None or quantity < 1:
+            raise forms.ValidationError("Quote quantity must be at least 1.")
+        return quantity
+
+
+BulkQuoteLineFormSet = inlineformset_factory(
+    BulkOrderRequest,
+    BulkQuoteLine,
+    form=BulkQuoteLineForm,
+    extra=5,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
+
+
+class BulkQuoteAcceptanceForm(forms.Form):
+    address = forms.CharField(
+        widget=forms.Textarea(attrs={
+            "class": "form-control",
+            "rows": 4,
+            "placeholder": "Complete delivery address",
+        }),
+    )
+    delivery_pincode = forms.CharField(
+        max_length=6,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "inputmode": "numeric",
+            "pattern": "[0-9]{6}",
+            "placeholder": "6 digit delivery PIN code",
+        }),
+    )
+
+    def clean_delivery_pincode(self):
+        pincode = self.cleaned_data.get("delivery_pincode", "").strip()
+        if len(pincode) != 6 or not pincode.isdigit():
+            raise forms.ValidationError("Enter a valid 6 digit PIN code.")
+        if not get_delivery_quote(pincode).serviceable:
+            raise forms.ValidationError("Delivery is not currently available for this PIN code.")
+        return pincode
 
 
 class ProductRestockForm(forms.Form):

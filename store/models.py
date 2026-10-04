@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -339,8 +341,17 @@ class BulkOrderRequest(models.Model):
 
     name = models.CharField(max_length=120)
     phone = models.CharField(max_length=15)
+    email = models.EmailField(blank=True)
     organisation = models.CharField(max_length=150, blank=True)
     requirement = models.TextField()
+    quote_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    quote_valid_until = models.DateTimeField(null=True, blank=True)
+    converted_at = models.DateTimeField(null=True, blank=True)
+    orders = models.ManyToManyField(
+        Order,
+        blank=True,
+        related_name="bulk_requests",
+    )
 
     status = models.CharField(
         max_length=30,
@@ -361,3 +372,47 @@ class BulkOrderRequest(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.phone}"
+
+    def quote_subtotal(self):
+        return sum(
+            (line.total_price() for line in self.quote_lines.all()),
+            start=0,
+        )
+
+
+class BulkQuoteLine(models.Model):
+    request = models.ForeignKey(
+        BulkOrderRequest,
+        on_delete=models.CASCADE,
+        related_name="quote_lines",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bulk_quote_lines",
+    )
+    product_name_snapshot = models.CharField(max_length=200)
+    product_brand_snapshot = models.CharField(max_length=100, blank=True)
+    product_category_snapshot = models.CharField(max_length=100, blank=True)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def total_price(self):
+        return self.quantity * self.unit_price
+
+    def save(self, *args, **kwargs):
+        if self.product_id:
+            product = self.product
+            self.product_name_snapshot = product.name
+            self.product_brand_snapshot = product.brand
+            self.product_category_snapshot = product.category.name
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product_name_snapshot} x {self.quantity}"

@@ -24,4 +24,9 @@ urlpatterns = [
 
     path("about/", views.about, name="about"),
     path("contact/", views.contact, name="contact"),
+    path(
+        "bulk-quotes/<uuid:token>/",
+        views.accept_bulk_quote,
+        name="bulk_quote_accept",
+    ),
 ]

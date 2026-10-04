@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import timedelta
 from types import SimpleNamespace
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -6,13 +7,21 @@ from django.db import transaction
 from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from django.utils import timezone
 
-from .models import Product, Category, Order
-from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
+from .models import Product, Category, Order, BulkOrderRequest, BulkQuoteLine
+from .forms import (
+    OrderForm,
+    BulkOrderRequestForm,
+    BulkQuoteAcceptanceForm,
+    CartCheckoutForm,
+)
 from .services import (
     change_stock,
     get_delivery_quote,
     record_order_status_change,
+    send_bulk_conversion_email,
 )
 
 
@@ -546,6 +555,156 @@ def contact(request):
 
     return render(request, "store/contact.html", {
         "form": form,
+    })
+
+
+def accept_bulk_quote(request, token):
+    bulk_request = get_object_or_404(
+        BulkOrderRequest.objects.prefetch_related("quote_lines"),
+        quote_token=token,
+    )
+    is_expired = (
+        bulk_request.quote_valid_until is None
+        or bulk_request.quote_valid_until <= timezone.now()
+    )
+    quote_available = bulk_request.status == "QUOTED" and not is_expired
+    form = BulkQuoteAcceptanceForm(request.POST or None)
+
+    if request.method == "POST" and quote_available and form.is_valid():
+        with transaction.atomic():
+            locked_request = BulkOrderRequest.objects.select_for_update().get(
+                pk=bulk_request.pk
+            )
+            if (
+                locked_request.status != "QUOTED"
+                or not locked_request.quote_valid_until
+                or locked_request.quote_valid_until <= timezone.now()
+            ):
+                quote_available = False
+            else:
+                lines = list(
+                    BulkQuoteLine.objects.filter(request=locked_request)
+                    .order_by("id")
+                )
+                required_by_product = {}
+                for line in lines:
+                    if not line.product_id:
+                        form.add_error(None, "A quoted product is no longer available.")
+                        break
+                    required_by_product[line.product_id] = (
+                        required_by_product.get(line.product_id, 0) + line.quantity
+                    )
+
+                products = {
+                    product.pk: product
+                    for product in Product.objects.select_for_update()
+                    .filter(pk__in=required_by_product)
+                    .order_by("pk")
+                }
+                if not form.non_field_errors():
+                    for product_id, required_quantity in required_by_product.items():
+                        product = products.get(product_id)
+                        if (
+                            product is None
+                            or not product.is_active
+                            or product.stock < required_quantity
+                        ):
+                            product_name = next(
+                                line.product_name_snapshot
+                                for line in lines
+                                if line.product_id == product_id
+                            )
+                            form.add_error(
+                                None,
+                                f"{product_name} no longer has enough stock. Please contact us for an updated quote.",
+                            )
+                            break
+
+                if not form.non_field_errors():
+                    delivery_quote = get_delivery_quote(
+                        form.cleaned_data["delivery_pincode"]
+                    )
+                    if not delivery_quote.serviceable:
+                        form.add_error(
+                            "delivery_pincode",
+                            "Delivery is not currently available for this PIN code.",
+                        )
+                    else:
+                        created_orders = []
+                        address = form.cleaned_data["address"]
+                        pincode = form.cleaned_data["delivery_pincode"]
+                        for index, line in enumerate(lines):
+                            product = products[line.product_id]
+                            order = Order.objects.create(
+                                customer=(
+                                    request.user
+                                    if request.user.is_authenticated
+                                    else None
+                                ),
+                                name=locked_request.name,
+                                phone=locked_request.phone,
+                                customer_email=locked_request.email,
+                                address=address,
+                                delivery_pincode=pincode,
+                                delivery_fee=(
+                                    delivery_quote.delivery_fee if index == 0
+                                    else Decimal("0.00")
+                                ),
+                                product=product,
+                                product_name_snapshot=line.product_name_snapshot,
+                                product_brand_snapshot=line.product_brand_snapshot,
+                                product_category_snapshot=line.product_category_snapshot,
+                                unit_price_snapshot=line.unit_price,
+                                quantity=line.quantity,
+                                payment_method="COD",
+                            )
+                            record_order_status_change(
+                                order=order,
+                                from_status="",
+                                actor=request.user,
+                                note="Bulk quote accepted",
+                                notify=False,
+                            )
+                            change_stock(
+                                product=product,
+                                quantity_delta=-line.quantity,
+                                reason="SALE",
+                                actor=request.user,
+                                order=order,
+                                note=f"Bulk quote #{locked_request.pk} accepted",
+                            )
+                            created_orders.append(order)
+
+                        locked_request.orders.add(*created_orders)
+                        locked_request.status = "CONVERTED"
+                        locked_request.converted_at = timezone.now()
+                        locked_request.save(
+                            update_fields=["status", "converted_at", "updated_at"]
+                        )
+                        transaction.on_commit(
+                            lambda request_id=locked_request.pk: send_bulk_conversion_email(
+                                request_id
+                            )
+                        )
+
+                        request.session["last_order_id"] = created_orders[0].pk
+                        request.session["last_cart_order_ids"] = [
+                            order.pk for order in created_orders
+                        ]
+                        messages.success(
+                            request,
+                            "Your accepted quote has been converted into orders.",
+                        )
+                        return redirect("order_success")
+
+        if not quote_available:
+            messages.error(request, "This quote has expired or has already been accepted.")
+
+    return render(request, "store/bulk_quote_accept.html", {
+        "bulk_request": bulk_request,
+        "form": form,
+        "quote_available": quote_available,
+        "is_expired": is_expired,
     })
 
 

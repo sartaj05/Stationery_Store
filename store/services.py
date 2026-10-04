@@ -5,7 +5,13 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import transaction
 
-from .models import DeliveryZone, InventoryMovement, Order, OrderStatusEvent
+from .models import (
+    BulkOrderRequest,
+    DeliveryZone,
+    InventoryMovement,
+    Order,
+    OrderStatusEvent,
+)
 
 
 def get_delivery_quote(pincode):
@@ -113,7 +119,7 @@ def send_order_status_email(order_id, to_status):
     )
 
 
-def record_order_status_change(*, order, from_status, actor=None, note=""):
+def record_order_status_change(*, order, from_status, actor=None, note="", notify=True):
     if from_status == order.status:
         return None
 
@@ -124,7 +130,7 @@ def record_order_status_change(*, order, from_status, actor=None, note=""):
         actor=actor if getattr(actor, "is_authenticated", False) else None,
         note=note[:255],
     )
-    if order.customer_id or order.customer_email:
+    if notify and (order.customer_id or order.customer_email):
         transaction.on_commit(
             lambda order_id=order.pk, to_status=order.status: send_order_status_email(
                 order_id,
@@ -132,3 +138,61 @@ def record_order_status_change(*, order, from_status, actor=None, note=""):
             )
         )
     return event
+
+
+def send_bulk_quote_email(request_id, quote_url):
+    bulk_request = BulkOrderRequest.objects.prefetch_related("quote_lines").filter(
+        pk=request_id
+    ).first()
+    if not bulk_request or not bulk_request.email:
+        return
+
+    lines = "\n".join(
+        f"- {line.product_name_snapshot}: {line.quantity} x {line.unit_price} = {line.total_price()}"
+        for line in bulk_request.quote_lines.all()
+    )
+    expiry = (
+        bulk_request.quote_valid_until.strftime("%d %b %Y")
+        if bulk_request.quote_valid_until
+        else "No expiry set"
+    )
+    send_mail(
+        subject="Your Delhi Stationery bulk quote is ready",
+        message=(
+            f"Hello {bulk_request.name},\n\n"
+            "Your requested bulk quote is ready:\n"
+            f"{lines}\n\n"
+            f"Items subtotal: {bulk_request.quote_subtotal()}\n"
+            f"Please review delivery and accept the quote here: {quote_url}\n"
+            f"Quote valid until: {expiry}\n\n"
+            "Delhi Stationery"
+        ),
+        from_email=None,
+        recipient_list=[bulk_request.email],
+        fail_silently=True,
+    )
+
+
+def send_bulk_conversion_email(request_id):
+    bulk_request = BulkOrderRequest.objects.prefetch_related("orders").filter(
+        pk=request_id
+    ).first()
+    if not bulk_request or not bulk_request.email:
+        return
+
+    orders = list(bulk_request.orders.all())
+    order_ids = ", ".join(f"#{order.pk}" for order in orders)
+    total = sum((order.total_price() for order in orders), start=Decimal("0.00"))
+    send_mail(
+        subject="Your Delhi Stationery bulk quote was accepted",
+        message=(
+            f"Hello {bulk_request.name},\n\n"
+            f"Your quote has been accepted and converted to orders: {order_ids}.\n"
+            f"Total including delivery: {total}.\n"
+            "Use your phone number and any order ID to track fulfilment.\n\n"
+            "Delhi Stationery"
+        ),
+        from_email=None,
+        recipient_list=[bulk_request.email],
+        fail_silently=True,
+    )

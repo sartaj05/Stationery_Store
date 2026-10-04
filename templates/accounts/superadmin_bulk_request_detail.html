@@ -487,7 +487,44 @@
                 </div>
             </div>
 
-        </section>
+</section>
+
+<section class="detail-wrap">
+    <div class="detail-card" style="grid-column:1 / -1">
+        <div class="detail-card-header">
+            <h2>Prepare or update quote</h2>
+            {% if bulk_request.status == "QUOTED" and bulk_request.quote_valid_until %}
+                <span>Valid until {{ bulk_request.quote_valid_until|date:"d M Y, h:i A" }}</span>
+            {% endif %}
+        </div>
+        <div class="detail-body">
+            {% if bulk_request.status == "CONVERTED" %}
+                <p>This quote has been accepted. Its orders are linked below.</p>
+                <ul>{% for order in bulk_request.orders.all %}<li><a href="{% url 'superadmin_order_detail' order.pk %}">Order #{{ order.pk }} — {{ order.product_name_snapshot }}</a></li>{% endfor %}</ul>
+            {% else %}
+                <p>Set product quantities and the agreed unit prices. Saving a quote makes it available to the customer for seven days.</p>
+                {% if quote_url %}<p>Share this acceptance link: <a href="{{ quote_url }}">{{ quote_url }}</a></p>{% endif %}
+                <form method="post" data-prevent-double-submit="true">
+                    {% csrf_token %}
+                    {{ quote_formset.management_form }}
+                    {% if quote_formset.non_form_errors %}<div class="dash-msg error">{{ quote_formset.non_form_errors }}</div>{% endif %}
+                    {% for line_form in quote_formset %}
+                        <div class="info-grid" style="margin-bottom:16px">
+                            {{ line_form.id }}
+                            <div class="form-group"><label>Product</label>{{ line_form.product }}{{ line_form.product.errors }}</div>
+                            <div class="form-group"><label>Quantity</label>{{ line_form.quantity }}{{ line_form.quantity.errors }}</div>
+                            <div class="form-group"><label>Agreed unit price</label>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</div>
+                            {% if line_form.instance.pk %}<div class="form-group"><label>Remove line</label>{{ line_form.DELETE }}</div>{% endif %}
+                            {% if line_form.non_field_errors %}<div>{{ line_form.non_field_errors }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <input type="hidden" name="action" value="save_quote">
+                    <button type="submit" class="action-btn primary">Save quote and send email</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</section>
 
     </main>
 </div>

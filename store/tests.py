@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -6,6 +7,7 @@ from django.core import mail
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import CustomerProfile
 from .forms import OrderStatusForm
@@ -16,6 +18,8 @@ from .models import (
     Order,
     OrderStatusEvent,
     Product,
+    BulkOrderRequest,
+    BulkQuoteLine,
 )
 
 
@@ -496,3 +500,185 @@ class StoreFlowTests(TestCase):
         self.assertTrue(
             CustomerProfile.objects.filter(user=self.customer).exists()
         )
+
+
+class BulkQuoteWorkflowTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Bulk supplies", slug="bulk-supplies")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Bulk Notebook",
+            brand="School Brand",
+            price=Decimal("100.00"),
+            discount_price=Decimal("90.00"),
+            stock=20,
+        )
+        self.second_product = Product.objects.create(
+            category=self.category,
+            name="Bulk Pen",
+            price=Decimal("15.00"),
+            stock=20,
+        )
+        self.request = BulkOrderRequest.objects.create(
+            name="Asha Sharma",
+            phone="9876543210",
+            email="asha@example.com",
+            organisation="Green Valley School",
+            requirement="School stationery for the new term",
+        )
+        self.staff = User.objects.create_superuser(
+            username="quote-manager",
+            email="manager@example.com",
+            password="strong-test-password",
+        )
+
+    def test_staff_can_prepare_and_email_a_five_line_quote(self):
+        self.client.login(username="quote-manager", password="strong-test-password")
+        post_data = {
+            "action": "save_quote",
+            "quote-TOTAL_FORMS": "5",
+            "quote-INITIAL_FORMS": "0",
+            "quote-MIN_NUM_FORMS": "1",
+            "quote-MAX_NUM_FORMS": "1000",
+            "quote-0-product": str(self.product.pk),
+            "quote-0-quantity": "50",
+            "quote-0-unit_price": "82.50",
+        }
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("superadmin_bulk_request_detail", args=[self.request.pk]),
+                post_data,
+            )
+
+        self.assertRedirects(
+            response,
+            reverse("superadmin_bulk_request_detail", args=[self.request.pk]),
+        )
+        self.request.refresh_from_db()
+        quote_line = self.request.quote_lines.get()
+        self.assertEqual(self.request.status, "QUOTED")
+        self.assertGreater(self.request.quote_valid_until, timezone.now())
+        self.assertEqual(quote_line.product_name_snapshot, "Bulk Notebook")
+        self.assertEqual(quote_line.unit_price, Decimal("82.50"))
+        self.assertEqual(self.request.quote_subtotal(), Decimal("4125.00"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(str(self.request.quote_token), mail.outbox[0].body)
+        self.assertIn("4125.00", mail.outbox[0].body)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_customer_acceptance_creates_orders_and_charges_delivery_once(self):
+        DeliveryZone.objects.create(
+            name="Central Delhi",
+            pincode="110001",
+            delivery_fee=Decimal("35.00"),
+            estimated_days=2,
+        )
+        self.request.status = "QUOTED"
+        self.request.quote_valid_until = timezone.now() + timedelta(days=3)
+        self.request.save(update_fields=["status", "quote_valid_until"])
+        BulkQuoteLine.objects.create(
+            request=self.request,
+            product=self.product,
+            quantity=2,
+            unit_price=Decimal("82.50"),
+        )
+        BulkQuoteLine.objects.create(
+            request=self.request,
+            product=self.second_product,
+            quantity=3,
+            unit_price=Decimal("12.00"),
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("bulk_quote_accept", args=[self.request.quote_token]),
+                {
+                    "address": "12 School Road, Delhi",
+                    "delivery_pincode": "110001",
+                },
+            )
+
+        self.assertRedirects(response, reverse("order_success"))
+        self.request.refresh_from_db()
+        orders = list(self.request.orders.order_by("id"))
+        self.assertEqual(self.request.status, "CONVERTED")
+        self.assertIsNotNone(self.request.converted_at)
+        self.assertEqual(len(orders), 2)
+        self.assertEqual(sum(order.delivery_fee for order in orders), Decimal("35.00"))
+        self.assertEqual(sum(order.total_price() for order in orders), Decimal("236.00"))
+        self.assertEqual(orders[0].product_name_snapshot, "Bulk Notebook")
+        self.assertEqual(orders[0].unit_price_snapshot, Decimal("82.50"))
+        self.product.refresh_from_db()
+        self.second_product.refresh_from_db()
+        self.assertEqual(self.product.stock, 18)
+        self.assertEqual(self.second_product.stock, 17)
+        self.assertEqual(InventoryMovement.objects.filter(reason="SALE").count(), 2)
+        self.assertEqual(OrderStatusEvent.objects.filter(note="Bulk quote accepted").count(), 2)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("accepted", mail.outbox[0].subject)
+        self.assertEqual(
+            self.client.session["last_cart_order_ids"],
+            [order.pk for order in orders],
+        )
+
+        response = self.client.post(
+            reverse("bulk_quote_accept", args=[self.request.quote_token]),
+            {
+                "address": "12 School Road, Delhi",
+                "delivery_pincode": "110001",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Order.objects.count(), 2)
+
+    def test_acceptance_fails_without_creating_partial_orders_if_stock_is_short(self):
+        self.request.status = "QUOTED"
+        self.request.quote_valid_until = timezone.now() + timedelta(days=3)
+        self.request.save(update_fields=["status", "quote_valid_until"])
+        BulkQuoteLine.objects.create(
+            request=self.request,
+            product=self.product,
+            quantity=2,
+            unit_price=Decimal("82.50"),
+        )
+        BulkQuoteLine.objects.create(
+            request=self.request,
+            product=self.second_product,
+            quantity=21,
+            unit_price=Decimal("12.00"),
+        )
+
+        response = self.client.post(
+            reverse("bulk_quote_accept", args=[self.request.quote_token]),
+            {
+                "address": "12 School Road, Delhi",
+                "delivery_pincode": "110001",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"],
+            None,
+            "Bulk Pen no longer has enough stock. Please contact us for an updated quote.",
+        )
+        self.assertFalse(Order.objects.exists())
+        self.assertFalse(InventoryMovement.objects.exists())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 20)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, "QUOTED")
+
+    def test_staff_cannot_manually_mark_request_converted(self):
+        self.client.login(username="quote-manager", password="strong-test-password")
+
+        response = self.client.post(
+            reverse("superadmin_bulk_request_detail", args=[self.request.pk]),
+            {"status": "CONVERTED", "admin_note": "Manual override"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.request.refresh_from_db()
+        self.assertEqual(self.request.status, "NEW")
+        self.assertFalse(Order.objects.exists())

@@ -1,4 +1,5 @@
 from django.contrib import messages
+from datetime import timedelta
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 import csv
 
@@ -21,6 +23,7 @@ from store.forms import (
     InventoryAdjustmentForm,
     DeliveryZoneForm,
     BulkOrderStatusForm,
+    BulkQuoteLineFormSet,
 )
 from store.models import (
     Category,
@@ -30,7 +33,11 @@ from store.models import (
     Product,
     BulkOrderRequest,
 )
-from store.services import change_stock, record_order_status_change
+from store.services import (
+    change_stock,
+    record_order_status_change,
+    send_bulk_quote_email,
+)
 
 
 # ===============================
@@ -668,21 +675,80 @@ def superadmin_bulk_request_list(request):
 @login_required
 @store_permission_required("store.manage_bulk_requests")
 def superadmin_bulk_request_detail(request, pk):
-    bulk_request = get_object_or_404(BulkOrderRequest, pk=pk)
+    bulk_request = get_object_or_404(
+        BulkOrderRequest.objects.prefetch_related("quote_lines", "orders"),
+        pk=pk,
+    )
 
-    if request.method == "POST":
+    if request.method == "POST" and request.POST.get("action") == "save_quote":
+        quote_formset = BulkQuoteLineFormSet(
+            request.POST,
+            instance=bulk_request,
+            prefix="quote",
+        )
+        form = BulkOrderStatusForm(instance=bulk_request)
+        if bulk_request.status == "CONVERTED":
+            messages.error(request, "An accepted quote cannot be edited.")
+        elif quote_formset.is_valid():
+            quote_lines = quote_formset.save(commit=False)
+            with transaction.atomic():
+                for deleted_line in quote_formset.deleted_objects:
+                    deleted_line.delete()
+                for line in quote_lines:
+                    line.request = bulk_request
+                    line.product_name_snapshot = line.product.name
+                    line.product_brand_snapshot = line.product.brand
+                    line.product_category_snapshot = line.product.category.name
+                    line.save()
+                quote_formset.save_m2m()
+                bulk_request.status = "QUOTED"
+                bulk_request.quote_valid_until = timezone.now() + timedelta(days=7)
+                bulk_request.save(
+                    update_fields=["status", "quote_valid_until", "updated_at"]
+                )
+                quote_url = request.build_absolute_uri(
+                    reverse(
+                        "bulk_quote_accept",
+                        kwargs={"token": bulk_request.quote_token},
+                    )
+                )
+                transaction.on_commit(
+                    lambda request_id=bulk_request.pk, url=quote_url: send_bulk_quote_email(
+                        request_id,
+                        url,
+                    )
+                )
+            messages.success(
+                request,
+                "Quote saved. The customer can accept it for the next seven days.",
+            )
+            return redirect("superadmin_bulk_request_detail", pk=bulk_request.pk)
+    elif request.method == "POST":
         form = BulkOrderStatusForm(request.POST, instance=bulk_request)
 
         if form.is_valid():
             form.save()
             messages.success(request, "Bulk request updated successfully.")
             return redirect("superadmin_bulk_request_detail", pk=bulk_request.pk)
+        quote_formset = BulkQuoteLineFormSet(instance=bulk_request, prefix="quote")
     else:
         form = BulkOrderStatusForm(instance=bulk_request)
+        quote_formset = BulkQuoteLineFormSet(instance=bulk_request, prefix="quote")
 
     context = {
         "bulk_request": bulk_request,
         "form": form,
+        "quote_formset": quote_formset,
+        "quote_url": (
+            request.build_absolute_uri(
+                reverse(
+                    "bulk_quote_accept",
+                    kwargs={"token": bulk_request.quote_token},
+                )
+            )
+            if bulk_request.status == "QUOTED"
+            else ""
+        ),
     }
 
     return render(request, "accounts/superadmin_bulk_request_detail.html", context)
