@@ -357,7 +357,7 @@
                     <div class="product-line">
                         <div class="product-thumb">
                             {% if order.product.image %}
-                                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+                                <img src="{{ order.product.image.url }}" alt="{{ order.product_name_snapshot }}">
                             {% else %}
                                 📦
                             {% endif %}
@@ -365,10 +365,10 @@
 
                         <div>
                             <h3 style="font-family:'Playfair Display',serif;margin-bottom:4px;color:var(--ink)">
-                                {{ order.product.name }}
+                                {{ order.product_name_snapshot }}
                             </h3>
                             <p style="color:#999;font-size:.84rem">
-                                {{ order.product.category.name }}
+                                {{ order.product_category_snapshot }}
                             </p>
                             <p style="color:#999;font-size:.84rem;margin-top:4px">
                                 Stock Left: {{ order.product.stock }}
@@ -386,7 +386,7 @@
                 <div class="detail-body">
                     <div class="summary-row">
                         <span>Product Price</span>
-                        <strong>₹{{ order.product.final_price }}</strong>
+                        <strong>₹{{ order.unit_price_snapshot }}</strong>
                     </div>
 
                     <div class="summary-row">

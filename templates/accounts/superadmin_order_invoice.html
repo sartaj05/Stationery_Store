@@ -420,17 +420,17 @@
         <tbody>
             <tr>
                 <td>
-                    <div class="product-name">{{ order.product.name }}</div>
+                    <div class="product-name">{{ order.product_name_snapshot }}</div>
                     <div class="product-meta">
-                        {% if order.product.brand %}
-                            Brand: {{ order.product.brand }}
+                        {% if order.product_brand_snapshot %}
+                            Brand: {{ order.product_brand_snapshot }}
                         {% else %}
                             Brand: Delhi Stationery
                         {% endif %}
                     </div>
                 </td>
-                <td>{{ order.product.category.name }}</td>
-                <td class="right">₹{{ order.product.final_price }}</td>
+                <td>{{ order.product_category_snapshot }}</td>
+                <td class="right">₹{{ order.unit_price_snapshot }}</td>
                 <td class="right">{{ order.quantity }}</td>
                 <td class="right">₹{{ order.total_price }}</td>
             </tr>

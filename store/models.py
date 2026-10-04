@@ -102,7 +102,15 @@ class Order(models.Model):
     phone = models.CharField(max_length=15)
     address = models.TextField()
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product_name_snapshot = models.CharField(max_length=200, blank=True)
+    product_brand_snapshot = models.CharField(max_length=100, blank=True)
+    product_category_snapshot = models.CharField(max_length=100, blank=True)
+    unit_price_snapshot = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
     quantity = models.PositiveIntegerField(default=1)
 
     payment_method = models.CharField(
@@ -129,10 +137,27 @@ class Order(models.Model):
         ]
 
     def total_price(self):
-        return self.product.final_price() * self.quantity
+        return self.unit_price_snapshot * self.quantity
+
+    def save(self, *args, **kwargs):
+        if self.product_id and (
+            not self.product_name_snapshot
+            or not self.product_category_snapshot
+            or self.unit_price_snapshot == 0
+        ):
+            product = self.product
+            if not self.product_name_snapshot:
+                self.product_name_snapshot = product.name
+            if not self.product_brand_snapshot:
+                self.product_brand_snapshot = product.brand
+            if not self.product_category_snapshot:
+                self.product_category_snapshot = product.category.name
+            if self.unit_price_snapshot == 0:
+                self.unit_price_snapshot = product.final_price()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} - {self.product.name}"
+        return f"{self.name} - {self.product_name_snapshot or self.product.name}"
 
 
 class BulkOrderRequest(models.Model):

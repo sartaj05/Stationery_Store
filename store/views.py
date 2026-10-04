@@ -724,6 +724,10 @@ def cart_checkout(request):
                         phone=form.cleaned_data["phone"],
                         address=form.cleaned_data["address"],
                         product=product,
+                        product_name_snapshot=product.name,
+                        product_brand_snapshot=product.brand,
+                        product_category_snapshot=product.category.name,
+                        unit_price_snapshot=product.final_price(),
                         quantity=quantity,
                         payment_method=form.cleaned_data["payment_method"],
                     )

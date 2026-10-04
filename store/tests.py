@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -80,6 +81,48 @@ class StoreFlowTests(TestCase):
         self.assertIsNone(order.customer)
         self.assertEqual(order.quantity, 2)
         self.assertEqual(order.total_price(), Decimal("180.00"))
+
+    def test_order_price_and_product_details_are_snapshotted(self):
+        response = self.client.post(
+            reverse("order_product", args=[self.product.id]),
+            {
+                "name": "Guest Customer",
+                "phone": "9876543210",
+                "address": "10 Test Road, Delhi",
+                "quantity": 2,
+                "payment_method": "COD",
+            },
+        )
+        self.assertRedirects(response, reverse("order_success"))
+        order = Order.objects.get()
+
+        self.product.name = "Updated Notebook"
+        self.product.brand = "Updated Brand"
+        self.product.price = Decimal("150.00")
+        self.product.discount_price = Decimal("125.00")
+        self.category.name = "Updated Category"
+        self.category.save(update_fields=["name"])
+        self.product.save(update_fields=["name", "brand", "price", "discount_price"])
+
+        order.refresh_from_db()
+        self.assertEqual(order.product_name_snapshot, "A4 Notebook")
+        self.assertEqual(order.product_brand_snapshot, "Sample Brand")
+        self.assertEqual(order.product_category_snapshot, "Notebooks")
+        self.assertEqual(order.unit_price_snapshot, Decimal("90.00"))
+        self.assertEqual(order.total_price(), Decimal("180.00"))
+
+    def test_product_with_order_history_cannot_be_deleted(self):
+        Order.objects.create(
+            customer=self.customer,
+            name="Test Customer",
+            phone="9876543210",
+            address="10 Test Road, Delhi",
+            product=self.product,
+            quantity=1,
+        )
+
+        with self.assertRaises(ProtectedError):
+            self.product.delete()
 
     def test_direct_order_cannot_exceed_available_stock(self):
         response = self.client.post(

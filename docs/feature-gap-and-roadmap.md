@@ -14,7 +14,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 | --- | --- | --- | --- |
 | 1 | Automated tests and CI | Implemented: Django tests now cover the core storefront and access flows, and GitHub Actions runs checks and tests for pushes and pull requests. | Expand regression coverage as each feature lands; keep CI green before merging changes. |
 | 2 | Staff roles and permissions | Implemented: scoped Django permissions protect staff modules, templates hide unavailable actions, and `python manage.py setup_store_roles` creates seven standard groups. | Assign each staff account only the group needed for its work; review permissions whenever a new staff feature is added. |
-| 3 | Order items and price snapshots | A cart creates one `Order` per product. `Order.total_price()` reads the product's current price, and deleting a product cascades to its orders. Product edits or deletions can change or erase historical order data. | Add a checkout/order record with related line items that store product name, SKU, unit price and quantity at purchase time. Protect referenced products or use soft deletion. |
+| 3 | Order items and price snapshots | Snapshot implementation complete: every order row stores product name, brand, category and unit price at purchase time; existing rows are backfilled, totals use the snapshot, and referenced products are protected from deletion. Cart checkout still creates one order row per product rather than grouping a multi-product cart under a single order number. | Consider parent-order grouping and SKU snapshots when receipts or fulfilment need one order record for a whole cart. |
 | 4 | Payment lifecycle | `COD` and `UPI` are stored as choices; there is no payment gateway, transaction reference, refund state or verified payment status. | Add explicit payment status and provider reference fields, then integrate a provider in test mode before accepting live payments. |
 | 5 | Inventory movement history | Stock decreases and restocks update the product quantity directly; there is no auditable movement ledger. | Record each sale, cancellation, manual adjustment and restock with quantity delta, actor, reason and timestamp. |
 | 6 | Order status history and customer notifications | An order stores only its current status and internal note; status changes do not create history or send notifications. | Add status-event records and send email notifications for confirmation, dispatch, delivery and cancellation. |
@@ -25,7 +25,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 
 ## Suggested delivery order
 
-Automated tests and CI plus scoped staff roles are in place. Next add immutable order-item price snapshots because they protect historical business records. Then add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
+Automated tests and CI, scoped staff roles, and immutable order price snapshots are in place. Next add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
 
 ## Important behavior to retain
 
@@ -40,6 +40,6 @@ Automated tests and CI plus scoped staff roles are in place. Next add immutable 
 - Migrations apply cleanly on a fresh database.
 - Tests cover quantity validation, stock reduction, stock restoration on allowed cancellation, and order visibility.
 - Dashboard access is checked for anonymous users, ordinary customers, staff users and superusers.
-- Historical totals remain unchanged after product prices are edited.
+- Historical totals remain unchanged after product prices are edited, and referenced products cannot be deleted.
 - A checkout failure leaves both inventory and the cart in a consistent state.
 - No production secret or debug setting is committed to source control.

@@ -38,16 +38,24 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "phone",
-        "product",
+        "product_name_snapshot",
         "quantity",
         "payment_method",
         "status",
         "total_price",
         "created_at",
     )
-    search_fields = ("name", "phone", "address", "product__name")
+    search_fields = ("name", "phone", "address", "product_name_snapshot")
     list_filter = ("payment_method", "status", "created_at")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = (
+        "product",
+        "product_name_snapshot",
+        "product_brand_snapshot",
+        "product_category_snapshot",
+        "unit_price_snapshot",
+        "created_at",
+        "updated_at",
+    )
 
 
 @admin.register(BulkOrderRequest)

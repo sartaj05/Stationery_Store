@@ -66,7 +66,7 @@
                         <div class="order-track-header">
                             <div>
                                 <span class="order-id">Order #{{ order.id }}</span>
-                                <h3>{{ order.product.name }}</h3>
+                                <h3>{{ order.product_name_snapshot }}</h3>
                                 <p>{{ order.created_at|date:"d M Y, h:i A" }}</p>
                             </div>
                             <span class="order-status {{ order.status|lower|slugify }}">{{ order.get_status_display }}</span>
@@ -76,14 +76,14 @@
                             <div class="order-product-row">
                                 <div class="order-product-img">
                                     {% if order.product.image %}
-                                        <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+                                        <img src="{{ order.product.image.url }}" alt="{{ order.product_name_snapshot }}">
                                     {% else %}
                                         📦
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <h4>{{ order.product.name }}</h4>
-                                    <p>{{ order.product.category.name }}</p>
+                                    <h4>{{ order.product_name_snapshot }}</h4>
+                                    <p>{{ order.product_category_snapshot }}</p>
                                 </div>
                             </div>
 
