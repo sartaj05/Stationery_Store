@@ -232,7 +232,7 @@
             gap: 8px;
             justify-content: flex-end;
             align-items: center;
-            min-width: 260px;
+            min-width: 390px;
         }
 
         .restock-form input {
@@ -247,6 +247,10 @@
         .restock-form input:focus {
             border-color: var(--saffron);
             box-shadow: 0 0 0 3px rgba(232,132,26,.12);
+        }
+
+        .restock-form input[name="reason"] {
+            width: 190px;
         }
 
         .mini-btn {
@@ -444,6 +448,9 @@
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a href="{% url 'superadmin_inventory_movements' %}" class="action-btn light">
+                    Inventory History
+                </a>
                 <a href="{% url 'superadmin_product_list' %}" class="action-btn light">
                     📦 All Products
                 </a>
@@ -585,6 +592,14 @@
                                             name="add_stock"
                                             min="1"
                                             placeholder="+ Qty"
+                                            required
+                                        >
+                                        <input
+                                            type="text"
+                                            name="reason"
+                                            minlength="5"
+                                            maxlength="255"
+                                            placeholder="Restock reason"
                                             required
                                         >
                                         <button type="submit" class="mini-btn primary">

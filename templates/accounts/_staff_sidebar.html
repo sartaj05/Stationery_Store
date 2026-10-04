@@ -27,6 +27,7 @@
         {% endif %}
         {% if perms.store.manage_inventory %}
             <a href="{% url 'superadmin_low_stock_list' %}" class="{% if 'low_stock' in request.resolver_match.url_name %}active{% endif %}">⚠️ Low Stock</a>
+            <a href="{% url 'superadmin_inventory_movements' %}" class="{% if 'inventory_movement' in request.resolver_match.url_name %}active{% endif %}">📦 Inventory History</a>
         {% endif %}
         <a href="{% url 'home' %}">🌐 Visit Website</a>
         <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>

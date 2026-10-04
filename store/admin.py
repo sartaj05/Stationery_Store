@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Order, BulkOrderRequest
+from .models import Category, Product, Order, BulkOrderRequest, InventoryMovement
 
 
 @admin.register(Category)
@@ -27,10 +27,10 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = (
         "price",
         "discount_price",
-        "stock",
         "is_featured",
         "is_active",
     )
+    readonly_fields = ("stock",)
 
 
 @admin.register(Order)
@@ -77,3 +77,32 @@ class BulkOrderRequestAdmin(admin.ModelAdmin):
     search_fields = ("name", "phone", "organisation", "requirement")
     list_filter = ("status", "created_at")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(InventoryMovement)
+class InventoryMovementAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "product",
+        "quantity_delta",
+        "reason",
+        "actor",
+        "order",
+    )
+    list_filter = ("reason", "created_at")
+    search_fields = ("product__name", "note", "order__name")
+    readonly_fields = (
+        "product",
+        "order",
+        "actor",
+        "reason",
+        "quantity_delta",
+        "note",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -1,13 +1,14 @@
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import CustomerProfile
 from .forms import OrderStatusForm
-from .models import Category, Order, Product
+from .models import Category, InventoryMovement, Order, Product
 
 
 class StoreFlowTests(TestCase):
@@ -82,6 +83,15 @@ class StoreFlowTests(TestCase):
         self.assertIsNone(order.customer)
         self.assertEqual(order.quantity, 2)
         self.assertEqual(order.total_price(), Decimal("180.00"))
+        movement = InventoryMovement.objects.get(order=order)
+        self.assertEqual(movement.quantity_delta, -2)
+        self.assertEqual(movement.reason, "SALE")
+        self.assertIsNone(movement.actor)
+        movement.note = "Changed by test"
+        with self.assertRaises(ValidationError):
+            movement.save()
+        with self.assertRaises(ValidationError):
+            movement.delete()
 
     def test_order_price_and_product_details_are_snapshotted(self):
         response = self.client.post(
@@ -241,6 +251,10 @@ class StoreFlowTests(TestCase):
         self.assertEqual(order.customer, self.customer)
         self.assertEqual(order.quantity, 3)
         self.assertEqual(self.client.session.get("cart"), {})
+        movement = InventoryMovement.objects.get(order=order)
+        self.assertEqual(movement.quantity_delta, -3)
+        self.assertEqual(movement.reason, "SALE")
+        self.assertEqual(movement.actor, self.customer)
 
     def test_checkout_rechecks_stock_and_keeps_cart_on_shortage(self):
         self.client.login(username="customer", password="strong-test-password")
@@ -318,6 +332,10 @@ class StoreFlowTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(self.product.stock, 8)
         self.assertEqual(order.status, "CANCELLED")
+        movement = InventoryMovement.objects.get(order=order)
+        self.assertEqual(movement.quantity_delta, 2)
+        self.assertEqual(movement.reason, "CANCELLATION")
+        self.assertEqual(movement.actor, self.customer)
 
     def test_customer_cannot_cancel_another_customers_order(self):
         order = Order.objects.create(

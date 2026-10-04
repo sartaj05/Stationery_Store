@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust Inventory | Delhi Stationery</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/superadmin.css' %}">
+    <style>
+        .adjust-page { padding:28px; max-width:760px; }
+        .adjust-card { background:#fff; padding:24px; border-radius:14px; margin-top:20px; }
+        .adjust-card label { display:block; font-weight:600; margin:16px 0 6px; }
+        .adjust-card input, .adjust-card select { width:100%; padding:11px; border:1px solid #ddd; border-radius:8px; }
+        .adjust-current { padding:14px; background:#f5f1e9; border-radius:8px; margin:16px 0; }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    {% include "accounts/_staff_sidebar.html" %}
+    <main class="dashboard-main adjust-page">
+        <header class="dashboard-header">
+            <div><h1>Adjust Stock</h1><p>{{ product.name }}</p></div>
+            <a class="admin-link" href="{% url 'superadmin_inventory_movements' %}">Inventory History</a>
+        </header>
+        <div class="adjust-card">
+            <div class="adjust-current">Current stock: <strong>{{ product.stock }}</strong></div>
+            {% if messages %}{% for message in messages %}<div class="dash-msg {{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+            <form method="post" data-prevent-double-submit="true">
+                {% csrf_token %}
+                <label for="{{ form.direction.id_for_label }}">Adjustment</label>
+                {{ form.direction }}{{ form.direction.errors }}
+                <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                {{ form.quantity }}{{ form.quantity.errors }}
+                <label for="{{ form.reason.id_for_label }}">Reason</label>
+                {{ form.reason }}{{ form.reason.errors }}
+                <button type="submit" class="action-btn primary" style="margin-top:18px">Save adjustment</button>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

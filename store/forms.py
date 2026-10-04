@@ -80,6 +80,11 @@ class CategoryForm(forms.ModelForm):
 
 
 class ProductForm(forms.ModelForm):
+    def __init__(self, *args, include_stock=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not include_stock:
+            self.fields.pop("stock", None)
+
     class Meta:
         model = Product
         fields = [
@@ -314,6 +319,25 @@ class ProductRestockForm(forms.Form):
             "placeholder": "Enter stock quantity"
         })
     )
+    reason = forms.CharField(
+        max_length=255,
+        min_length=5,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Reason for this stock change",
+        }),
+    )
+
+
+class InventoryAdjustmentForm(forms.Form):
+    DIRECTION_CHOICES = [
+        ("ADD", "Add stock"),
+        ("REMOVE", "Remove stock"),
+    ]
+
+    direction = forms.ChoiceField(choices=DIRECTION_CHOICES)
+    quantity = forms.IntegerField(min_value=1)
+    reason = forms.CharField(max_length=255, min_length=5)
 
 
 class CartCheckoutForm(forms.Form):

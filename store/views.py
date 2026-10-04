@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Product, Category, Order
 from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
+from .services import change_stock
 
 
 # ============================================================
@@ -406,8 +407,14 @@ def order_product(request, product_id):
 
                 order.save()
 
-                locked_product.stock -= order.quantity
-                locked_product.save(update_fields=["stock"])
+                change_stock(
+                    product=locked_product,
+                    quantity_delta=-order.quantity,
+                    reason="SALE",
+                    actor=request.user,
+                    order=order,
+                    note=f"Order #{order.id} placed",
+                )
 
             request.session["last_order_id"] = order.id
             request.session["last_cart_order_ids"] = []
@@ -541,8 +548,14 @@ def cancel_order(request, order_id):
             order.admin_note = "Cancelled by customer."
             order.save(update_fields=["status", "admin_note", "updated_at"])
 
-            product.stock += order.quantity
-            product.save(update_fields=["stock"])
+            change_stock(
+                product=product,
+                quantity_delta=order.quantity,
+                reason="CANCELLATION",
+                actor=request.user,
+                order=order,
+                note=f"Order #{order.id} cancelled by customer",
+            )
 
         messages.success(request, f"Order #{order.id} cancelled successfully.")
         return redirect("my_orders")
@@ -732,8 +745,14 @@ def cart_checkout(request):
                         payment_method=form.cleaned_data["payment_method"],
                     )
 
-                    product.stock -= quantity
-                    product.save(update_fields=["stock"])
+                    change_stock(
+                        product=product,
+                        quantity_delta=-quantity,
+                        reason="SALE",
+                        actor=request.user,
+                        order=order,
+                        note=f"Order #{order.id} placed",
+                    )
 
                     created_orders.append(order)
 

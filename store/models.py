@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
@@ -192,6 +193,58 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.product_name_snapshot or self.product.name}"
+
+
+class InventoryMovement(models.Model):
+    REASON_CHOICES = [
+        ("SALE", "Sale"),
+        ("CANCELLATION", "Order cancellation"),
+        ("RESTOCK", "Restock"),
+        ("ADJUSTMENT", "Manual adjustment"),
+        ("INITIAL", "Opening stock"),
+    ]
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="inventory_movements",
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_movements",
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_movements",
+    )
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    quantity_delta = models.IntegerField()
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["product", "-created_at"]),
+            models.Index(fields=["reason", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product.name}: {self.quantity_delta:+d} ({self.reason})"
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError("Inventory movement records cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Inventory movement records cannot be deleted.")
 
 
 class BulkOrderRequest(models.Model):

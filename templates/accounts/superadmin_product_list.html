@@ -556,6 +556,15 @@
                                             👁️ View
                                         </a>
 
+                                        {% if can_manage_inventory %}
+                                            <a
+                                                href="{% url 'superadmin_product_adjust_stock' product.id %}"
+                                                class="mini-btn primary"
+                                            >
+                                                Adjust Stock
+                                            </a>
+                                        {% endif %}
+
                                         {% if can_manage_catalog %}
                                             <a
                                                 href="{% url 'superadmin_product_update' product.id %}"

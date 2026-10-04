@@ -5,8 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
-from store.models import Category
-from store.models import Product
+from store.models import Category, InventoryMovement, Product
 
 
 class SuperadminAccessTests(TestCase):
@@ -206,6 +205,34 @@ class StoreStaffRoleTests(TestCase):
             reverse("superadmin_product_list"),
         )
 
+    def test_catalog_manager_cannot_set_stock_on_product_creation(self):
+        self.client.login(
+            username="catalog-staff",
+            password="strong-test-password",
+        )
+        create_page = self.client.get(reverse("superadmin_product_create"))
+        self.assertEqual(create_page.status_code, 200)
+        self.assertNotContains(create_page, 'name="stock"')
+
+        response = self.client.post(
+            reverse("superadmin_product_create"),
+            {
+                "category": self.category.id,
+                "name": "Catalog Only Product",
+                "brand": "Test Brand",
+                "description": "Created without inventory permission",
+                "price": "10.00",
+                "discount_price": "",
+                "stock": 99,
+                "is_featured": "",
+                "is_active": "on",
+            },
+        )
+        self.assertRedirects(response, reverse("superadmin_product_list"))
+        product = Product.objects.get(name="Catalog Only Product")
+        self.assertEqual(product.stock, 0)
+        self.assertFalse(InventoryMovement.objects.filter(product=product).exists())
+
     def test_inventory_manager_can_restock_but_cannot_edit_catalogue(self):
         self.client.login(
             username="inventory-staff",
@@ -223,10 +250,53 @@ class StoreStaffRoleTests(TestCase):
         )
         self.client.post(
             reverse("superadmin_product_restock", args=[self.product.id]),
-            {"add_stock": 5},
+            {"add_stock": 5, "reason": "Supplier delivery"},
         )
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock, 8)
+        movement = InventoryMovement.objects.get(product=self.product)
+        self.assertEqual(movement.quantity_delta, 5)
+        self.assertEqual(movement.reason, "RESTOCK")
+        self.assertEqual(movement.actor, self.inventory_user)
+        self.assertEqual(movement.note, "Supplier delivery")
+
+    def test_inventory_manager_can_make_reasoned_manual_adjustments(self):
+        self.client.login(
+            username="inventory-staff",
+            password="strong-test-password",
+        )
+
+        self.assertEqual(
+            self.client.get(
+                reverse("superadmin_product_adjust_stock", args=[self.product.id])
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("superadmin_inventory_movements")).status_code,
+            200,
+        )
+
+        response = self.client.post(
+            reverse("superadmin_product_adjust_stock", args=[self.product.id]),
+            {"direction": "REMOVE", "quantity": 2, "reason": "Damaged in store"},
+        )
+
+        self.assertRedirects(response, reverse("superadmin_inventory_movements"))
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 1)
+        movement = InventoryMovement.objects.get(product=self.product)
+        self.assertEqual(movement.quantity_delta, -2)
+        self.assertEqual(movement.reason, "ADJUSTMENT")
+        self.assertEqual(movement.actor, self.inventory_user)
+
+        self.client.post(
+            reverse("superadmin_product_adjust_stock", args=[self.product.id]),
+            {"direction": "REMOVE", "quantity": 5, "reason": "Damaged in store"},
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 1)
+        self.assertEqual(InventoryMovement.objects.filter(product=self.product).count(), 1)
 
     def test_order_manager_is_limited_to_order_module(self):
         self.client.login(

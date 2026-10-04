@@ -2,6 +2,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
+from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,9 +18,11 @@ from store.forms import (
     ProductForm,
     OrderStatusForm,
     ProductRestockForm,
+    InventoryAdjustmentForm,
     BulkOrderStatusForm,
 )
-from store.models import Category, Order, Product, BulkOrderRequest
+from store.models import Category, Order, Product, BulkOrderRequest, InventoryMovement
+from store.services import change_stock
 
 
 # ===============================
@@ -396,8 +401,15 @@ def superadmin_category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
 
     if request.method == "POST":
-        category.delete()
-        messages.success(request, "Category deleted successfully.")
+        try:
+            category.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "This category contains products with order or inventory history. Archive those products instead.",
+            )
+        else:
+            messages.success(request, "Category deleted successfully.")
         return redirect("superadmin_category_list")
 
     return render(request, "accounts/superadmin_confirm_delete.html", {
@@ -457,15 +469,35 @@ def superadmin_product_list(request):
 @login_required
 @store_permission_required("store.manage_catalog")
 def superadmin_product_create(request):
+    can_set_opening_stock = (
+        request.user.is_superuser or request.user.has_perm("store.manage_inventory")
+    )
     if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            include_stock=can_set_opening_stock,
+        )
 
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                product = form.save(commit=False)
+                opening_stock = product.stock if can_set_opening_stock else 0
+                product.stock = 0
+                product.save()
+                form.save_m2m()
+                if opening_stock:
+                    change_stock(
+                        product=product,
+                        quantity_delta=opening_stock,
+                        reason="INITIAL",
+                        actor=request.user,
+                        note="Opening stock on product creation",
+                    )
             messages.success(request, "Product created successfully.")
             return redirect("superadmin_product_list")
     else:
-        form = ProductForm()
+        form = ProductForm(include_stock=can_set_opening_stock)
 
     return render(request, "accounts/superadmin_product_form.html", {
         "form": form,
@@ -479,14 +511,19 @@ def superadmin_product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == "POST":
-        form = ProductForm(request.POST, request.FILES, instance=product)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            instance=product,
+            include_stock=False,
+        )
 
         if form.is_valid():
             form.save()
             messages.success(request, "Product updated successfully.")
             return redirect("superadmin_product_list")
     else:
-        form = ProductForm(instance=product)
+        form = ProductForm(instance=product, include_stock=False)
 
     return render(request, "accounts/superadmin_product_form.html", {
         "form": form,
@@ -501,8 +538,15 @@ def superadmin_product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == "POST":
-        product.delete()
-        messages.success(request, "Product deleted successfully.")
+        try:
+            product.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "This product has order or inventory history and cannot be deleted. Mark it inactive instead.",
+            )
+        else:
+            messages.success(request, "Product deleted successfully.")
         return redirect("superadmin_product_list")
 
     return render(request, "accounts/superadmin_confirm_delete.html", {
@@ -788,8 +832,15 @@ def superadmin_product_restock(request, pk):
 
         if form.is_valid():
             add_stock = form.cleaned_data["add_stock"]
-            product.stock += add_stock
-            product.save(update_fields=["stock"])
+            with transaction.atomic():
+                product = Product.objects.select_for_update().get(pk=pk)
+                change_stock(
+                    product=product,
+                    quantity_delta=add_stock,
+                    reason="RESTOCK",
+                    actor=request.user,
+                    note=form.cleaned_data["reason"],
+                )
 
             messages.success(
                 request,
@@ -799,6 +850,64 @@ def superadmin_product_restock(request, pk):
             messages.error(request, "Please enter a valid stock quantity.")
 
     return redirect("superadmin_low_stock_list")
+
+
+@login_required
+@store_permission_required("store.manage_inventory")
+def superadmin_product_adjust_stock(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == "POST":
+        form = InventoryAdjustmentForm(request.POST)
+        if form.is_valid():
+            quantity_delta = form.cleaned_data["quantity"]
+            if form.cleaned_data["direction"] == "REMOVE":
+                quantity_delta *= -1
+            try:
+                with transaction.atomic():
+                    product = Product.objects.select_for_update().get(pk=pk)
+                    change_stock(
+                        product=product,
+                        quantity_delta=quantity_delta,
+                        reason="ADJUSTMENT",
+                        actor=request.user,
+                        note=form.cleaned_data["reason"],
+                    )
+            except ValidationError as error:
+                messages.error(request, "; ".join(error.messages))
+            else:
+                messages.success(request, f"Stock adjusted for {product.name}.")
+        else:
+            messages.error(request, "Enter a quantity and a clear reason for the adjustment.")
+        return redirect("superadmin_inventory_movements")
+    return render(request, "accounts/superadmin_inventory_adjust.html", {
+        "product": product,
+        "form": InventoryAdjustmentForm(),
+    })
+
+
+@login_required
+@store_permission_required("store.manage_inventory")
+def superadmin_inventory_movements(request):
+    movements = InventoryMovement.objects.select_related(
+        "product", "actor", "order"
+    )
+    reason = request.GET.get("reason", "").strip()
+    query = request.GET.get("q", "").strip()
+    if reason:
+        movements = movements.filter(reason=reason)
+    if query:
+        movements = movements.filter(
+            Q(product__name__icontains=query)
+            | Q(note__icontains=query)
+            | Q(order__name__icontains=query)
+        )
+    page_obj = Paginator(movements, 25).get_page(request.GET.get("page"))
+    return render(request, "accounts/superadmin_inventory_movements.html", {
+        "page_obj": page_obj,
+        "query": query,
+        "reason": reason,
+        "reason_choices": InventoryMovement.REASON_CHOICES,
+    })
 
 
 @login_required
