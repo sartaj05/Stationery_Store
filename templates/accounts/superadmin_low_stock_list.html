@@ -392,24 +392,7 @@
 
 <div class="dashboard-layout">
 
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <h2>📚 Delhi Stationery</h2>
-            <p>Superadmin Panel</p>
-        </div>
-
-        <nav class="side-menu">
-            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
-            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
-            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
-            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
-            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
-            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
-            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
-            <a href="{% url 'home' %}">🌐 Visit Website</a>
-            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
-        </nav>
-    </aside>
+        {% include "accounts/_staff_sidebar.html" %}
 
     <main class="dashboard-main">
 
@@ -419,9 +402,11 @@
                 <p>Track products that need restocking before customers find out first. Radical stuff.</p>
             </div>
 
-            <a href="{% url 'superadmin_product_create' %}" class="admin-link">
-                ➕ Add Product
-            </a>
+            {% if perms.store.manage_catalog %}
+                <a href="{% url 'superadmin_product_create' %}" class="admin-link">
+                    ➕ Add Product
+                </a>
+            {% endif %}
         </header>
 
         {% if messages %}
@@ -462,9 +447,11 @@
                 <a href="{% url 'superadmin_product_list' %}" class="action-btn light">
                     📦 All Products
                 </a>
-                <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
-                    ➕ Add Product
-                </a>
+                {% if perms.store.manage_catalog %}
+                    <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
+                        ➕ Add Product
+                    </a>
+                {% endif %}
             </div>
         </section>
 
@@ -608,12 +595,14 @@
 
                                 <td>
                                     <div style="display:flex;justify-content:flex-end">
+                                        {% if perms.store.manage_catalog %}
                                         <a
                                             href="{% url 'superadmin_product_update' product.id %}"
                                             class="mini-btn edit"
                                         >
                                             ✏️ Edit
                                         </a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

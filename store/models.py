@@ -14,6 +14,9 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ["name"]
+        permissions = [
+            ("manage_catalog", "Can manage the product catalogue"),
+        ]
 
     def __str__(self):
         return self.name
@@ -47,6 +50,11 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        permissions = [
+            ("manage_catalog", "Can manage the product catalogue"),
+            ("manage_inventory", "Can manage product inventory"),
+            ("view_store_dashboard", "Can view the store operations dashboard"),
+        ]
 
     def final_price(self):
         return self.discount_price if self.discount_price else self.price
@@ -116,6 +124,9 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        permissions = [
+            ("manage_orders", "Can manage customer orders"),
+        ]
 
     def total_price(self):
         return self.product.final_price() * self.quantity
@@ -151,6 +162,9 @@ class BulkOrderRequest(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        permissions = [
+            ("manage_bulk_requests", "Can manage bulk order requests"),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.phone}"

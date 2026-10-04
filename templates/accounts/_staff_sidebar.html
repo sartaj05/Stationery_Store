@@ -1,0 +1,34 @@
+{% load static %}
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <h2>📚 Delhi Stationery</h2>
+        <p>Store Staff</p>
+    </div>
+
+    <nav class="side-menu">
+        <a href="{% url 'store_staff_home' %}" class="{% if request.resolver_match.url_name == 'store_staff_home' %}active{% endif %}">Workspace</a>
+        {% if perms.store.view_store_dashboard %}
+            <a href="{% url 'superadmin_dashboard' %}" class="{% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}">📊 Dashboard</a>
+        {% endif %}
+        {% if perms.store.manage_catalog or perms.store.manage_inventory %}
+            <a href="{% url 'superadmin_product_list' %}" class="{% if 'product' in request.resolver_match.url_name %}active{% endif %}">📦 Products</a>
+        {% endif %}
+        {% if perms.store.manage_catalog %}
+            <a href="{% url 'superadmin_category_list' %}" class="{% if 'category' in request.resolver_match.url_name %}active{% endif %}">🗂️ Categories</a>
+        {% endif %}
+        {% if perms.store.manage_orders %}
+            <a href="{% url 'superadmin_order_list' %}" class="{% if 'order' in request.resolver_match.url_name and 'bulk' not in request.resolver_match.url_name %}active{% endif %}">🛒 Orders</a>
+        {% endif %}
+        {% if perms.store.manage_bulk_requests %}
+            <a href="{% url 'superadmin_bulk_request_list' %}" class="{% if 'bulk_request' in request.resolver_match.url_name %}active{% endif %}">📋 Bulk Requests</a>
+        {% endif %}
+        {% if perms.accounts.view_store_customers %}
+            <a href="{% url 'superadmin_customer_list' %}" class="{% if 'customer' in request.resolver_match.url_name %}active{% endif %}">👥 Customers</a>
+        {% endif %}
+        {% if perms.store.manage_inventory %}
+            <a href="{% url 'superadmin_low_stock_list' %}" class="{% if 'low_stock' in request.resolver_match.url_name %}active{% endif %}">⚠️ Low Stock</a>
+        {% endif %}
+        <a href="{% url 'home' %}">🌐 Visit Website</a>
+        <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
+    </nav>
+</aside>

@@ -24,6 +24,10 @@ class CustomerProfile(models.Model):
         verbose_name = "Customer Profile"
         verbose_name_plural = "Customer Profiles"
         ordering = ["-updated_at"]
+        permissions = [
+            ("view_store_customers", "Can view store customer accounts"),
+            ("manage_store_customers", "Can manage store customer accounts"),
+        ]
 
     def __str__(self):
         return f"{self.user.username} Profile"

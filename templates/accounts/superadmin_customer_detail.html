@@ -369,24 +369,7 @@
 
 <div class="dashboard-layout">
 
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <h2>📚 Delhi Stationery</h2>
-            <p>Superadmin Panel</p>
-        </div>
-
-        <nav class="side-menu">
-            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
-            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
-            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
-            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
-            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
-            <a href="{% url 'superadmin_customer_list' %}" class="active">👥 Customers</a>
-            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
-            <a href="{% url 'home' %}">🌐 Visit Website</a>
-            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
-        </nav>
-    </aside>
+        {% include "accounts/_staff_sidebar.html" %}
 
     <main class="dashboard-main">
 
@@ -498,6 +481,7 @@
                         </div>
 
                         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+                            {% if perms.accounts.manage_store_customers %}
                             <form
                                 method="post"
                                 action="{% url 'superadmin_customer_toggle_status' customer.id %}"
@@ -521,6 +505,7 @@
                                     </button>
                                 {% endif %}
                             </form>
+                            {% endif %}
 
                             <a href="{% url 'superadmin_customer_list' %}" class="action-btn light">
                                 ← Back
@@ -668,12 +653,14 @@
                 <div class="detail-card-header">
                     <h2>Customer Orders</h2>
 
-                    <a
-                        href="{% url 'superadmin_order_list' %}?q={{ customer.username }}"
-                        style="font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none"
-                    >
-                        All Orders →
-                    </a>
+                    {% if perms.store.manage_orders %}
+                        <a
+                            href="{% url 'superadmin_order_list' %}?q={{ customer.username }}"
+                            style="font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none"
+                        >
+                            All Orders →
+                        </a>
+                    {% endif %}
                 </div>
 
                 <div class="table-wrapper">
@@ -737,14 +724,16 @@
 
                                 <td>
                                     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
-                                        <a
-                                            href="{% url 'superadmin_order_detail' order.id %}"
-                                            class="mini-btn view"
-                                        >
-                                            👁️ View
-                                        </a>
+                                        {% if perms.store.manage_orders %}
+                                            <a
+                                                href="{% url 'superadmin_order_detail' order.id %}"
+                                                class="mini-btn view"
+                                            >
+                                                👁️ View
+                                            </a>
+                                        {% endif %}
 
-                                        {% if order.id %}
+                                        {% if order.id and perms.store.manage_orders %}
                                             <a
                                                 href="{% url 'superadmin_order_invoice' order.id %}"
                                                 target="_blank"

@@ -354,24 +354,7 @@
 
 <div class="dashboard-layout">
 
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <h2>📚 Delhi Stationery</h2>
-            <p>Superadmin Panel</p>
-        </div>
-
-        <nav class="side-menu">
-            <a href="{% url 'superadmin_dashboard' %}">📊 Dashboard</a>
-            <a href="{% url 'superadmin_product_list' %}">📦 Products</a>
-            <a href="{% url 'superadmin_category_list' %}">🗂️ Categories</a>
-            <a href="{% url 'superadmin_order_list' %}">🛒 Orders</a>
-            <a href="{% url 'superadmin_bulk_request_list' %}">📋 Bulk Requests</a>
-            <a href="{% url 'superadmin_customer_list' %}">👥 Customers</a>
-            <a href="{% url 'superadmin_low_stock_list' %}">⚠️ Low Stock</a>
-            <a href="{% url 'home' %}">🌐 Visit Website</a>
-            <a href="{% url 'logout' %}" class="logout" style="margin-top:auto">🚪 Logout</a>
-        </nav>
-    </aside>
+        {% include "accounts/_staff_sidebar.html" %}
 
     <main class="dashboard-main">
 
@@ -381,9 +364,11 @@
                 <p>Manage product inventory, pricing, stock and visibility.</p>
             </div>
 
-            <a href="{% url 'superadmin_product_create' %}" class="admin-link">
-                ➕ Add Product
-            </a>
+            {% if can_manage_catalog %}
+                <a href="{% url 'superadmin_product_create' %}" class="admin-link">
+                    ➕ Add Product
+                </a>
+            {% endif %}
         </header>
 
         {% if messages %}
@@ -401,12 +386,14 @@
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
-                    ➕ Add Product
-                </a>
-                <a href="{% url 'superadmin_category_create' %}" class="action-btn secondary">
-                    ➕ Add Category
-                </a>
+                {% if can_manage_catalog %}
+                    <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
+                        ➕ Add Product
+                    </a>
+                    <a href="{% url 'superadmin_category_create' %}" class="action-btn secondary">
+                        ➕ Add Category
+                    </a>
+                {% endif %}
 
                 <a
                     href="{% url 'superadmin_export_products_csv' %}?{% if query %}q={{ query|urlencode }}&{% endif %}{% if category_slug %}category={{ category_slug|urlencode }}&{% endif %}{% if stock_filter %}stock={{ stock_filter|urlencode }}{% endif %}"
@@ -569,19 +556,21 @@
                                             👁️ View
                                         </a>
 
-                                        <a
-                                            href="{% url 'superadmin_product_update' product.id %}"
-                                            class="mini-btn edit"
-                                        >
-                                            ✏️ Edit
-                                        </a>
+                                        {% if can_manage_catalog %}
+                                            <a
+                                                href="{% url 'superadmin_product_update' product.id %}"
+                                                class="mini-btn edit"
+                                            >
+                                                ✏️ Edit
+                                            </a>
 
-                                        <a
-                                            href="{% url 'superadmin_product_delete' product.id %}"
-                                            class="mini-btn delete"
-                                        >
-                                            🗑️ Delete
-                                        </a>
+                                            <a
+                                                href="{% url 'superadmin_product_delete' product.id %}"
+                                                class="mini-btn delete"
+                                            >
+                                                🗑️ Delete
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -593,11 +582,13 @@
                                         <h3>No products found</h3>
                                         <p>Add your first product or clear the current filters.</p>
 
-                                        <div style="margin-top:20px">
-                                            <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
-                                                ➕ Add Product
-                                            </a>
-                                        </div>
+                                        {% if can_manage_catalog %}
+                                            <div style="margin-top:20px">
+                                                <a href="{% url 'superadmin_product_create' %}" class="action-btn primary">
+                                                    ➕ Add Product
+                                                </a>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

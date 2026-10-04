@@ -4,7 +4,7 @@
 
 Delhi Stationery is a Django 5.2 server-rendered store. It includes a public catalogue, product search and category filtering, direct product orders, a session cart, authenticated checkout, customer profiles and order history, phone-based order lookup, bulk enquiries, and a custom dashboard.
 
-The dashboard views currently require a Django superuser. They manage products and categories, update order and enquiry status, view customer history, restock inventory, print invoices, and export CSV files. Timestamps use Django's automatic creation and update fields.
+The staff workspace uses Django permissions and groups to scope catalogue, inventory, order, bulk-request, and customer-account access. Superusers retain full access; the `setup_store_roles` management command creates the standard staff groups. Store operations include product/category management, order and enquiry status updates, customer history, restocking, invoices, and CSV exports.
 
 The sample catalogue is generated in memory and appears only when there are no active products in the database. It is not seed data and does not create orderable database products. The sample product illustrations are now served from the app's static files, so the empty-state catalogue does not depend on Unsplash or another external image host.
 
@@ -13,7 +13,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 | Priority | Feature | Current gap | Suggested first slice |
 | --- | --- | --- | --- |
 | 1 | Automated tests and CI | Implemented: Django tests now cover the core storefront and access flows, and GitHub Actions runs checks and tests for pushes and pull requests. | Expand regression coverage as each feature lands; keep CI green before merging changes. |
-| 2 | Staff roles and permissions | Custom dashboard access checks `is_superuser`; there is no limited store-manager or inventory-staff role. | Define Django groups and permissions for catalogue, orders, customers and reports, then enforce them per view. |
+| 2 | Staff roles and permissions | Implemented: scoped Django permissions protect staff modules, templates hide unavailable actions, and `python manage.py setup_store_roles` creates seven standard groups. | Assign each staff account only the group needed for its work; review permissions whenever a new staff feature is added. |
 | 3 | Order items and price snapshots | A cart creates one `Order` per product. `Order.total_price()` reads the product's current price, and deleting a product cascades to its orders. Product edits or deletions can change or erase historical order data. | Add a checkout/order record with related line items that store product name, SKU, unit price and quantity at purchase time. Protect referenced products or use soft deletion. |
 | 4 | Payment lifecycle | `COD` and `UPI` are stored as choices; there is no payment gateway, transaction reference, refund state or verified payment status. | Add explicit payment status and provider reference fields, then integrate a provider in test mode before accepting live payments. |
 | 5 | Inventory movement history | Stock decreases and restocks update the product quantity directly; there is no auditable movement ledger. | Record each sale, cancellation, manual adjustment and restock with quantity delta, actor, reason and timestamp. |
@@ -25,7 +25,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 
 ## Suggested delivery order
 
-Automated tests and CI are in place. Next add staff permissions and immutable order-item price snapshots because they protect store operations and historical business records. Then add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
+Automated tests and CI plus scoped staff roles are in place. Next add immutable order-item price snapshots because they protect historical business records. Then add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
 
 ## Important behavior to retain
 

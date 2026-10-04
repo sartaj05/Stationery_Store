@@ -42,8 +42,8 @@
             <a href="{% url 'contact' %}">Contact</a>
 
             {% if request.user.is_authenticated %}
-                {% if request.user.is_superuser %}
-                    <a href="{% url 'superadmin_dashboard' %}" class="admin-btn">Dashboard</a>
+                {% if request.user.is_superuser or perms.store.manage_catalog or perms.store.manage_inventory or perms.store.manage_orders or perms.store.manage_bulk_requests or perms.accounts.view_store_customers %}
+                    <a href="{% url 'store_staff_home' %}" class="admin-btn">Staff Workspace</a>
                 {% else %}
                     <a href="{% url 'customer_profile' %}" class="admin-btn">My Profile</a>
                     <a href="{% url 'my_orders' %}" class="admin-btn">My Orders</a>

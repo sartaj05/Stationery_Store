@@ -9,6 +9,7 @@ from django.utils import timezone
 import csv
 
 from django.http import HttpResponse
+from .roles import STORE_STAFF_PERMISSIONS
 from store.forms import (
     CategoryForm,
     ProductForm,
@@ -23,11 +24,47 @@ from store.models import Category, Order, Product, BulkOrderRequest
 # AUTH VIEWS
 # ===============================
 
+def has_store_staff_access(user):
+    return user.is_authenticated and (
+        user.is_superuser
+        or any(user.has_perm(permission) for permission in STORE_STAFF_PERMISSIONS)
+    )
+
+
+def store_permission_required(*permissions):
+    def permission_check(user):
+        return user.is_authenticated and (
+            user.is_superuser
+            or any(user.has_perm(permission) for permission in permissions)
+        )
+
+    return user_passes_test(permission_check)
+
+
+def _store_landing_url(user):
+    if user.is_superuser or user.has_perm("store.view_store_dashboard"):
+        return "superadmin_dashboard"
+    if user.has_perm("store.manage_catalog"):
+        return "superadmin_product_list"
+    if user.has_perm("store.manage_inventory"):
+        return "superadmin_low_stock_list"
+    if user.has_perm("store.manage_orders"):
+        return "superadmin_order_list"
+    if user.has_perm("store.manage_bulk_requests"):
+        return "superadmin_bulk_request_list"
+    if user.has_perm("accounts.view_store_customers"):
+        return "superadmin_customer_list"
+    return "home"
+
+
+@login_required
+@user_passes_test(has_store_staff_access)
+def store_staff_home(request):
+    return redirect(_store_landing_url(request.user))
+
 def custom_login(request):
     if request.user.is_authenticated:
-        if request.user.is_superuser:
-            return redirect("superadmin_dashboard")
-        return redirect("home")
+        return redirect(_store_landing_url(request.user))
 
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
@@ -45,10 +82,7 @@ def custom_login(request):
 
         login(request, user)
 
-        if user.is_superuser:
-            return redirect("superadmin_dashboard")
-
-        return redirect("home")
+        return redirect(_store_landing_url(user))
 
     return render(request, "accounts/login.html")
 
@@ -99,16 +133,12 @@ def custom_logout(request):
     return redirect("login")
 
 
-def is_superadmin(user):
-    return user.is_authenticated and user.is_superuser
-
-
 # ===============================
 # SUPERADMIN DASHBOARD
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.view_store_dashboard")
 def superadmin_dashboard(request):
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
@@ -298,7 +328,7 @@ def superadmin_dashboard(request):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_category_list(request):
     query = request.GET.get("q", "").strip()
 
@@ -320,7 +350,7 @@ def superadmin_category_list(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_category_create(request):
     if request.method == "POST":
         form = CategoryForm(request.POST)
@@ -339,7 +369,7 @@ def superadmin_category_create(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_category_update(request, pk):
     category = get_object_or_404(Category, pk=pk)
 
@@ -361,7 +391,7 @@ def superadmin_category_update(request, pk):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
 
@@ -382,7 +412,7 @@ def superadmin_category_delete(request, pk):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog", "store.manage_inventory")
 def superadmin_product_list(request):
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
@@ -419,11 +449,13 @@ def superadmin_product_list(request):
         "query": query,
         "category_slug": category_slug,
         "stock_filter": stock_filter,
+        "can_manage_catalog": request.user.is_superuser or request.user.has_perm("store.manage_catalog"),
+        "can_manage_inventory": request.user.is_superuser or request.user.has_perm("store.manage_inventory"),
     })
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_product_create(request):
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
@@ -442,7 +474,7 @@ def superadmin_product_create(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -464,7 +496,7 @@ def superadmin_product_update(request, pk):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog")
 def superadmin_product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -485,7 +517,7 @@ def superadmin_product_delete(request, pk):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_orders")
 def superadmin_order_list(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -514,7 +546,7 @@ def superadmin_order_list(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_orders")
 def superadmin_order_detail(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("product", "product__category"),
@@ -542,7 +574,7 @@ def superadmin_order_detail(request, pk):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_bulk_requests")
 def superadmin_bulk_request_list(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -574,7 +606,7 @@ def superadmin_bulk_request_list(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_bulk_requests")
 def superadmin_bulk_request_detail(request, pk):
     bulk_request = get_object_or_404(BulkOrderRequest, pk=pk)
 
@@ -601,7 +633,7 @@ def superadmin_bulk_request_detail(request, pk):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("accounts.view_store_customers")
 def superadmin_customer_list(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -638,7 +670,7 @@ def superadmin_customer_list(request):
     return render(request, "accounts/superadmin_customer_list.html", context)
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("accounts.view_store_customers")
 def superadmin_customer_detail(request, pk):
     customer = get_object_or_404(
         User.objects.annotate(order_count=Count("orders")),
@@ -681,7 +713,7 @@ def superadmin_customer_detail(request, pk):
     return render(request, "accounts/superadmin_customer_detail.html", context)
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("accounts.manage_store_customers")
 def superadmin_customer_toggle_status(request, pk):
     customer = get_object_or_404(User, pk=pk, is_superuser=False)
 
@@ -702,7 +734,7 @@ def superadmin_customer_toggle_status(request, pk):
 # ===============================
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_inventory")
 def superadmin_low_stock_list(request):
     query = request.GET.get("q", "").strip()
     stock_filter = request.GET.get("stock", "low").strip()
@@ -747,7 +779,7 @@ def superadmin_low_stock_list(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_inventory")
 def superadmin_product_restock(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -770,7 +802,7 @@ def superadmin_product_restock(request, pk):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_orders")
 def superadmin_order_invoice(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("product", "product__category", "customer"),
@@ -796,7 +828,7 @@ def _csv_response(filename):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_catalog", "store.manage_inventory")
 def superadmin_export_products_csv(request):
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
@@ -865,7 +897,7 @@ def superadmin_export_products_csv(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_orders")
 def superadmin_export_orders_csv(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -933,7 +965,7 @@ def superadmin_export_orders_csv(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("accounts.view_store_customers")
 def superadmin_export_customers_csv(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -996,7 +1028,7 @@ def superadmin_export_customers_csv(request):
 
 
 @login_required
-@user_passes_test(is_superadmin)
+@store_permission_required("store.manage_bulk_requests")
 def superadmin_export_bulk_requests_csv(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
