@@ -19,9 +19,17 @@ from store.forms import (
     OrderStatusForm,
     ProductRestockForm,
     InventoryAdjustmentForm,
+    DeliveryZoneForm,
     BulkOrderStatusForm,
 )
-from store.models import Category, Order, Product, BulkOrderRequest, InventoryMovement
+from store.models import (
+    Category,
+    DeliveryZone,
+    InventoryMovement,
+    Order,
+    Product,
+    BulkOrderRequest,
+)
 from store.services import change_stock, record_order_status_change
 
 
@@ -919,6 +927,23 @@ def superadmin_inventory_movements(request):
 
 
 @login_required
+@store_permission_required("store.manage_delivery_zones")
+def superadmin_delivery_zones(request, pk=None):
+    zone = get_object_or_404(DeliveryZone, pk=pk) if pk is not None else None
+    form = DeliveryZoneForm(request.POST or None, instance=zone)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Delivery zone saved.")
+        return redirect("superadmin_delivery_zones")
+
+    return render(request, "accounts/superadmin_delivery_zones.html", {
+        "form": form,
+        "zones": DeliveryZone.objects.all(),
+        "editing_zone": zone,
+    })
+
+
+@login_required
 @store_permission_required("store.manage_orders")
 def superadmin_order_invoice(request, pk):
     order = get_object_or_404(
@@ -1047,6 +1072,10 @@ def superadmin_export_orders_csv(request):
         "Phone",
         "Customer Email",
         "Address",
+        "Delivery PIN Code",
+        "Delivery Fee",
+        "Carrier",
+        "Tracking Reference",
         "Registered Username",
         "Product",
         "Category",
@@ -1071,6 +1100,10 @@ def superadmin_export_orders_csv(request):
             order.phone,
             order.customer_email or (order.customer.email if order.customer else ""),
             order.address,
+            order.delivery_pincode,
+            order.delivery_fee,
+            order.carrier_name,
+            order.tracking_number,
             order.customer.username if order.customer else "",
             order.product_name_snapshot,
             order.product_category_snapshot,

@@ -401,6 +401,10 @@
         <div class="info-card">
             <h3>Delivery Address</h3>
             <p>{{ order.address }}</p>
+            <p>PIN code: {{ order.delivery_pincode|default:"—" }}</p>
+            {% if order.carrier_name or order.tracking_number %}
+                <p>Dispatch: {{ order.carrier_name }} {{ order.tracking_number }}</p>
+            {% endif %}
             <p style="margin-top:10px">
                 <strong>Payment:</strong> {{ order.get_payment_method_display }}
             </p>
@@ -432,7 +436,7 @@
                 <td>{{ order.product_category_snapshot }}</td>
                 <td class="right">₹{{ order.unit_price_snapshot }}</td>
                 <td class="right">{{ order.quantity }}</td>
-                <td class="right">₹{{ order.total_price }}</td>
+                <td class="right">₹{{ order.items_total }}</td>
             </tr>
         </tbody>
     </table>
@@ -441,12 +445,12 @@
         <div class="summary-box">
             <div class="summary-row">
                 <span>Subtotal</span>
-                <strong>₹{{ order.total_price }}</strong>
+                <strong>₹{{ order.items_total }}</strong>
             </div>
 
             <div class="summary-row">
                 <span>Delivery Charge</span>
-                <strong>As applicable</strong>
+                <strong>₹{{ order.delivery_fee }}</strong>
             </div>
 
             <div class="summary-row">

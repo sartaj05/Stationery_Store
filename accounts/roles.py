@@ -3,6 +3,7 @@ STORE_ROLE_PERMISSIONS = {
         "store.manage_catalog",
         "store.manage_inventory",
         "store.manage_orders",
+        "store.manage_delivery_zones",
         "store.manage_bulk_requests",
         "store.view_store_dashboard",
         "accounts.view_store_customers",
@@ -16,6 +17,7 @@ STORE_ROLE_PERMISSIONS = {
     },
     "Order Manager": {
         "store.manage_orders",
+        "store.manage_delivery_zones",
     },
     "Bulk Order Manager": {
         "store.manage_bulk_requests",

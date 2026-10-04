@@ -294,6 +294,24 @@
                         </div>
 
                         <div class="info-item">
+                            <label>Delivery PIN Code</label>
+                            <strong>{{ order.delivery_pincode|default:"—" }}</strong>
+                        </div>
+
+                        <div class="info-item">
+                            <label>Delivery Fee</label>
+                            <strong>₹{{ order.delivery_fee }}</strong>
+                        </div>
+
+                        {% if order.carrier_name or order.tracking_number %}
+                        <div class="info-item full">
+                            <label>Dispatch Details</label>
+                            <strong>{{ order.carrier_name }} {{ order.tracking_number }}</strong>
+                            {% if order.dispatched_at %}<span>Dispatched {{ order.dispatched_at|date:"d M Y, h:i A" }}</span>{% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="info-item">
                             <label>Payment Method</label>
                             <strong>{{ order.get_payment_method_display }}</strong>
                         </div>
@@ -358,6 +376,18 @@
                             {% if form.admin_note.errors %}
                                 <small style="color:var(--ruby)">{{ form.admin_note.errors.0 }}</small>
                             {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Carrier / Delivery Partner</label>
+                            {{ form.carrier_name }}
+                            {% if form.carrier_name.errors %}<small style="color:var(--ruby)">{{ form.carrier_name.errors.0 }}</small>{% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tracking Reference</label>
+                            {{ form.tracking_number }}
+                            {% if form.tracking_number.errors %}<small style="color:var(--ruby)">{{ form.tracking_number.errors.0 }}</small>{% endif %}
                         </div>
 
                         <div class="form-group">

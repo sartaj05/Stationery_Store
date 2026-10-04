@@ -9,7 +9,11 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Product, Category, Order
 from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
-from .services import change_stock, record_order_status_change
+from .services import (
+    change_stock,
+    get_delivery_quote,
+    record_order_status_change,
+)
 
 
 # ============================================================
@@ -280,6 +284,7 @@ def _get_profile_initial_data(request):
         if profile:
             initial_data["phone"] = profile.phone or ""
             initial_data["address"] = profile.full_address() or ""
+            initial_data["delivery_pincode"] = profile.pincode or ""
 
     return initial_data
 
@@ -378,15 +383,19 @@ def product_detail(request, product_id):
 
 def order_product(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True)
+    initial_data = _get_profile_initial_data(request)
 
     if product.stock <= 0:
         messages.error(request, "This product is currently out of stock.")
         return redirect("product_detail", product_id=product.id)
 
     if request.method == "POST":
-        form = OrderForm(request.POST)
+        form = OrderForm(request.POST, initial=initial_data)
 
         if form.is_valid():
+            delivery_quote = get_delivery_quote(
+                form.cleaned_data["delivery_pincode"]
+            )
             with transaction.atomic():
                 locked_product = Product.objects.select_for_update().get(
                     id=product.id,
@@ -395,6 +404,7 @@ def order_product(request, product_id):
 
                 order = form.save(commit=False)
                 order.product = locked_product
+                order.delivery_fee = delivery_quote.delivery_fee
 
                 if request.user.is_authenticated:
                     order.customer = request.user
@@ -434,12 +444,18 @@ def order_product(request, product_id):
             return redirect("order_success")
 
     else:
-        initial_data = _get_profile_initial_data(request)
         form = OrderForm(initial=initial_data)
 
+    quote_pincode = (
+        request.POST.get("delivery_pincode", "")
+        if request.method == "POST"
+        else initial_data.get("delivery_pincode", "")
+    )
+    delivery_quote = get_delivery_quote(quote_pincode)
     return render(request, "store/order_form.html", {
         "product": product,
         "form": form,
+        "delivery_quote": delivery_quote,
     })
 
 
@@ -729,6 +745,9 @@ def cart_checkout(request):
         form = CartCheckoutForm(request.POST)
 
         if form.is_valid():
+            delivery_quote = get_delivery_quote(
+                form.cleaned_data["delivery_pincode"]
+            )
             created_orders = []
 
             with transaction.atomic():
@@ -753,6 +772,8 @@ def cart_checkout(request):
                         phone=form.cleaned_data["phone"],
                         customer_email=form.cleaned_data.get("customer_email", ""),
                         address=form.cleaned_data["address"],
+                        delivery_pincode=form.cleaned_data["delivery_pincode"],
+                        delivery_fee=delivery_quote.delivery_fee,
                         product=product,
                         product_name_snapshot=product.name,
                         product_brand_snapshot=product.brand,
@@ -798,9 +819,19 @@ def cart_checkout(request):
     else:
         form = CartCheckoutForm(initial=initial_data)
 
+    quote_pincode = (
+        request.POST.get("delivery_pincode", "")
+        if request.method == "POST"
+        else initial_data.get("delivery_pincode", "")
+    )
+    delivery_quote = get_delivery_quote(quote_pincode)
+    delivery_fee = delivery_quote.delivery_fee or Decimal("0.00")
+
     return render(request, "store/cart_checkout.html", {
         "form": form,
         "cart_items": cart_items,
         "subtotal": subtotal,
         "cart_count": _cart_count(cart),
+        "delivery_quote": delivery_quote,
+        "checkout_total": subtotal + delivery_fee,
     })

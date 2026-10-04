@@ -17,6 +17,9 @@
             <a href="{% url 'superadmin_category_list' %}" class="{% if 'category' in request.resolver_match.url_name %}active{% endif %}">🗂️ Categories</a>
         {% endif %}
         {% if perms.store.manage_orders %}
+            {% if perms.store.manage_delivery_zones %}
+                <a href="{% url 'superadmin_delivery_zones' %}" class="{% if 'delivery_zone' in request.resolver_match.url_name %}active{% endif %}">🚚 Delivery Zones</a>
+            {% endif %}
             <a href="{% url 'superadmin_order_list' %}" class="{% if 'order' in request.resolver_match.url_name and 'bulk' not in request.resolver_match.url_name %}active{% endif %}">🛒 Orders</a>
         {% endif %}
         {% if perms.store.manage_bulk_requests %}

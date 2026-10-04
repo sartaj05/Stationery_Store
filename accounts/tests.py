@@ -1,4 +1,5 @@
 from io import StringIO
+from decimal import Decimal
 
 from django.contrib.auth.models import Group, User
 from django.core import mail
@@ -8,6 +9,7 @@ from django.urls import reverse
 
 from store.models import (
     Category,
+    DeliveryZone,
     InventoryMovement,
     Order,
     OrderStatusEvent,
@@ -319,10 +321,37 @@ class StoreStaffRoleTests(TestCase):
             self.client.get(reverse("superadmin_bulk_request_list")).status_code,
             302,
         )
+        self.assertEqual(
+            self.client.get(reverse("superadmin_delivery_zones")).status_code,
+            200,
+        )
         self.assertRedirects(
             self.client.get(reverse("store_staff_home")),
             reverse("superadmin_order_list"),
         )
+
+    def test_order_manager_can_configure_delivery_zone_fees(self):
+        self.client.login(
+            username="order-staff",
+            password="strong-test-password",
+        )
+
+        response = self.client.post(
+            reverse("superadmin_delivery_zones"),
+            {
+                "name": "Central Delhi",
+                "pincode": "110001",
+                "delivery_fee": "25.00",
+                "estimated_days": 1,
+                "is_serviceable": "on",
+                "is_active": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("superadmin_delivery_zones"))
+        zone = DeliveryZone.objects.get(pincode="110001")
+        self.assertEqual(zone.delivery_fee, Decimal("25.00"))
+        self.assertEqual(zone.estimated_days, 1)
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_staff_order_status_change_is_logged_and_emails_customer(self):

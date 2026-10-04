@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -113,6 +114,12 @@ class Order(models.Model):
     phone = models.CharField(max_length=15)
     customer_email = models.EmailField(blank=True)
     address = models.TextField()
+    delivery_pincode = models.CharField(max_length=6, blank=True)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    carrier_name = models.CharField(max_length=100, blank=True)
+    tracking_number = models.CharField(max_length=120, blank=True)
+    dispatched_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
 
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     product_name_snapshot = models.CharField(max_length=200, blank=True)
@@ -163,9 +170,13 @@ class Order(models.Model):
         ]
 
     def total_price(self):
+        return self.items_total() + self.delivery_fee
+
+    def items_total(self):
         return self.unit_price_snapshot * self.quantity
 
     def save(self, *args, **kwargs):
+        automatic_update_fields = set()
         if (
             self._state.adding
             and self.payment_method == "UPI"
@@ -190,6 +201,14 @@ class Order(models.Model):
             self.paid_at = timezone.now()
         if self.payment_status in {"PARTIALLY_REFUNDED", "REFUNDED"} and self.refunded_at is None:
             self.refunded_at = timezone.now()
+        if self.status == "OUT_FOR_DELIVERY" and self.dispatched_at is None:
+            self.dispatched_at = timezone.now()
+            automatic_update_fields.add("dispatched_at")
+        if self.status == "DELIVERED" and self.delivered_at is None:
+            self.delivered_at = timezone.now()
+            automatic_update_fields.add("delivered_at")
+        if kwargs.get("update_fields") is not None and automatic_update_fields:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | automatic_update_fields
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -281,6 +300,32 @@ class OrderStatusEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Order status history cannot be deleted.")
+
+
+class DeliveryZone(models.Model):
+    name = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=6, unique=True)
+    delivery_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    estimated_days = models.PositiveSmallIntegerField(default=2)
+    is_serviceable = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["pincode"]
+        permissions = [
+            ("manage_delivery_zones", "Can manage delivery service areas"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(delivery_fee__gte=0),
+                name="delivery_zone_fee_nonnegative",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.pincode} - {self.name}"
 
 
 class BulkOrderRequest(models.Model):

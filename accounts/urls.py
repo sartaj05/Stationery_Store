@@ -114,6 +114,16 @@ urlpatterns = [
         name="superadmin_inventory_movements"
     ),
     path(
+        "superadmin/delivery-zones/",
+        views.superadmin_delivery_zones,
+        name="superadmin_delivery_zones"
+    ),
+    path(
+        "superadmin/delivery-zones/<int:pk>/edit/",
+        views.superadmin_delivery_zones,
+        name="superadmin_delivery_zone_edit"
+    ),
+    path(
         "superadmin/orders/<int:pk>/invoice/",
         views.superadmin_order_invoice,
         name="superadmin_order_invoice"

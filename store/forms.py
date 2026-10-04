@@ -1,5 +1,6 @@
 from django import forms
-from .models import Category, Product, Order, BulkOrderRequest
+from .models import Category, DeliveryZone, Product, Order, BulkOrderRequest
+from .services import get_delivery_quote
 
 
 class OrderForm(forms.ModelForm):
@@ -10,6 +11,7 @@ class OrderForm(forms.ModelForm):
             "phone",
             "customer_email",
             "address",
+            "delivery_pincode",
             "quantity",
             "payment_method",
         ]
@@ -31,6 +33,13 @@ class OrderForm(forms.ModelForm):
                 "class": "form-control",
                 "rows": 3,
                 "placeholder": "Enter Delhi delivery address"
+            }),
+            "delivery_pincode": forms.TextInput(attrs={
+                "class": "form-control",
+                "inputmode": "numeric",
+                "pattern": "[0-9]{6}",
+                "maxlength": 6,
+                "placeholder": "6 digit delivery PIN code",
             }),
             "quantity": forms.NumberInput(attrs={
                 "class": "form-control",
@@ -59,6 +68,14 @@ class OrderForm(forms.ModelForm):
             raise forms.ValidationError("Quantity must be at least 1.")
 
         return quantity
+
+    def clean_delivery_pincode(self):
+        pincode = self.cleaned_data.get("delivery_pincode", "").strip()
+        if len(pincode) != 6 or not pincode.isdigit():
+            raise forms.ValidationError("Enter a valid 6 digit PIN code.")
+        if not get_delivery_quote(pincode).serviceable:
+            raise forms.ValidationError("Delivery is not currently available for this PIN code.")
+        return pincode
 
 
 class CategoryForm(forms.ModelForm):
@@ -198,6 +215,8 @@ class OrderStatusForm(forms.ModelForm):
             "transaction_reference",
             "refund_reference",
             "refund_amount",
+            "carrier_name",
+            "tracking_number",
         ]
 
         widgets = {
@@ -215,6 +234,14 @@ class OrderStatusForm(forms.ModelForm):
                 "class": "form-control",
                 "step": "0.01",
                 "min": "0",
+            }),
+            "carrier_name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Courier or in-house delivery",
+            }),
+            "tracking_number": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Dispatch tracking reference",
             }),
             "admin_note": forms.Textarea(attrs={
                 "class": "form-control",
@@ -265,6 +292,16 @@ class OrderStatusForm(forms.ModelForm):
                     "refund_amount",
                     "Use refunded when returning the full order total.",
                 )
+
+        if (
+            cleaned_data.get("status") == "OUT_FOR_DELIVERY"
+            and not cleaned_data.get("carrier_name", "").strip()
+            and not cleaned_data.get("tracking_number", "").strip()
+        ):
+            self.add_error(
+                "tracking_number",
+                "Add a carrier or tracking reference before dispatch.",
+            )
 
         return cleaned_data
 
@@ -351,6 +388,49 @@ class InventoryAdjustmentForm(forms.Form):
     reason = forms.CharField(max_length=255, min_length=5)
 
 
+class DeliveryZoneForm(forms.ModelForm):
+    class Meta:
+        model = DeliveryZone
+        fields = [
+            "name",
+            "pincode",
+            "delivery_fee",
+            "estimated_days",
+            "is_serviceable",
+            "is_active",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "pincode": forms.TextInput(attrs={
+                "class": "form-control",
+                "inputmode": "numeric",
+                "pattern": "[0-9]{6}",
+                "maxlength": 6,
+            }),
+            "delivery_fee": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": "0",
+                "step": "0.01",
+            }),
+            "estimated_days": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": "1",
+            }),
+        }
+
+    def clean_pincode(self):
+        pincode = self.cleaned_data.get("pincode", "").strip()
+        if len(pincode) != 6 or not pincode.isdigit():
+            raise forms.ValidationError("Enter a valid 6 digit PIN code.")
+        return pincode
+
+    def clean_delivery_fee(self):
+        fee = self.cleaned_data.get("delivery_fee")
+        if fee is not None and fee < 0:
+            raise forms.ValidationError("Delivery fee cannot be negative.")
+        return fee
+
+
 class CartCheckoutForm(forms.Form):
     name = forms.CharField(
         max_length=120,
@@ -384,6 +464,16 @@ class CartCheckoutForm(forms.Form):
         })
     )
 
+    delivery_pincode = forms.CharField(
+        max_length=6,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "inputmode": "numeric",
+            "pattern": "[0-9]{6}",
+            "placeholder": "6 digit delivery PIN code",
+        }),
+    )
+
     payment_method = forms.ChoiceField(
         choices=Order.PAYMENT_CHOICES,
         widget=forms.Select(attrs={
@@ -401,3 +491,11 @@ class CartCheckoutForm(forms.Form):
             raise forms.ValidationError("Enter a valid 10 digit mobile number.")
 
         return phone
+
+    def clean_delivery_pincode(self):
+        pincode = self.cleaned_data.get("delivery_pincode", "").strip()
+        if len(pincode) != 6 or not pincode.isdigit():
+            raise forms.ValidationError("Enter a valid 6 digit PIN code.")
+        if not get_delivery_quote(pincode).serviceable:
+            raise forms.ValidationError("Delivery is not currently available for this PIN code.")
+        return pincode

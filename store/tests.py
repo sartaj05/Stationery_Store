@@ -11,6 +11,7 @@ from accounts.models import CustomerProfile
 from .forms import OrderStatusForm
 from .models import (
     Category,
+    DeliveryZone,
     InventoryMovement,
     Order,
     OrderStatusEvent,
@@ -78,6 +79,7 @@ class StoreFlowTests(TestCase):
                 "name": "Guest Customer",
                 "phone": "9876543210",
                 "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
                 "quantity": 2,
                 "payment_method": "COD",
             },
@@ -114,6 +116,7 @@ class StoreFlowTests(TestCase):
                     "phone": "9876543210",
                     "customer_email": "guest@example.com",
                     "address": "10 Test Road, Delhi",
+                    "delivery_pincode": "110001",
                     "quantity": 1,
                     "payment_method": "COD",
                 },
@@ -130,6 +133,7 @@ class StoreFlowTests(TestCase):
                 "name": "Guest Customer",
                 "phone": "9876543210",
                 "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
                 "quantity": 2,
                 "payment_method": "COD",
             },
@@ -238,6 +242,37 @@ class StoreFlowTests(TestCase):
         self.assertEqual(refunded_order.refund_reference, "REF-TXN-456")
         self.assertIsNotNone(refunded_order.refunded_at)
 
+    def test_dispatch_requires_carrier_or_tracking_and_records_timestamp(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            name="Test Customer",
+            phone="9876543210",
+            address="10 Test Road, Delhi",
+            product=self.product,
+            quantity=1,
+        )
+        form_data = {
+            "status": "OUT_FOR_DELIVERY",
+            "admin_note": "",
+            "payment_status": "UNPAID",
+            "transaction_reference": "",
+            "refund_reference": "",
+            "refund_amount": "0",
+            "carrier_name": "",
+            "tracking_number": "",
+        }
+        invalid_form = OrderStatusForm(form_data, instance=order)
+        self.assertFalse(invalid_form.is_valid())
+        self.assertIn("tracking_number", invalid_form.errors)
+
+        form_data["carrier_name"] = "Delhi Stationery Van"
+        form_data["tracking_number"] = "DS-TRACK-101"
+        valid_form = OrderStatusForm(form_data, instance=order)
+        self.assertTrue(valid_form.is_valid(), valid_form.errors)
+        dispatched_order = valid_form.save()
+        self.assertIsNotNone(dispatched_order.dispatched_at)
+        self.assertEqual(dispatched_order.tracking_number, "DS-TRACK-101")
+
     def test_direct_order_cannot_exceed_available_stock(self):
         response = self.client.post(
             reverse("order_product", args=[self.product.id]),
@@ -245,6 +280,7 @@ class StoreFlowTests(TestCase):
                 "name": "Guest Customer",
                 "phone": "9876543210",
                 "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
                 "quantity": 9,
                 "payment_method": "COD",
             },
@@ -270,6 +306,7 @@ class StoreFlowTests(TestCase):
                 "name": "Test Customer",
                 "phone": "9876543210",
                 "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
                 "payment_method": "COD",
             },
         )
@@ -289,6 +326,68 @@ class StoreFlowTests(TestCase):
         self.assertContains(history_response, "Status history")
         self.assertContains(history_response, "Order placed")
 
+    def test_checkout_snapshots_serviceable_zone_fee(self):
+        DeliveryZone.objects.create(
+            name="Central Delhi",
+            pincode="110001",
+            delivery_fee=Decimal("25.00"),
+            estimated_days=1,
+        )
+        self.client.login(username="customer", password="strong-test-password")
+        session = self.client.session
+        session["cart"] = {str(self.product.id): {"quantity": 2}}
+        session.save()
+
+        response = self.client.post(
+            reverse("cart_checkout"),
+            {
+                "name": "Test Customer",
+                "phone": "9876543210",
+                "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
+                "payment_method": "COD",
+            },
+        )
+
+        self.assertRedirects(response, reverse("order_success"))
+        order = Order.objects.get()
+        self.assertEqual(order.delivery_pincode, "110001")
+        self.assertEqual(order.delivery_fee, Decimal("25.00"))
+        self.assertEqual(order.items_total(), Decimal("180.00"))
+        self.assertEqual(order.total_price(), Decimal("205.00"))
+
+    def test_checkout_rejects_pincode_outside_configured_delivery_zones(self):
+        DeliveryZone.objects.create(
+            name="Central Delhi",
+            pincode="110001",
+            delivery_fee=Decimal("25.00"),
+        )
+        self.client.login(username="customer", password="strong-test-password")
+        session = self.client.session
+        session["cart"] = {str(self.product.id): {"quantity": 2}}
+        session.save()
+
+        response = self.client.post(
+            reverse("cart_checkout"),
+            {
+                "name": "Test Customer",
+                "phone": "9876543210",
+                "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110099",
+                "payment_method": "COD",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context["form"],
+            "delivery_pincode",
+            "Delivery is not currently available for this PIN code.",
+        )
+        self.assertFalse(Order.objects.exists())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 8)
+
     def test_checkout_rechecks_stock_and_keeps_cart_on_shortage(self):
         self.client.login(username="customer", password="strong-test-password")
         session = self.client.session
@@ -301,6 +400,7 @@ class StoreFlowTests(TestCase):
                 "name": "Test Customer",
                 "phone": "9876543210",
                 "address": "10 Test Road, Delhi",
+                "delivery_pincode": "110001",
                 "payment_method": "COD",
             },
         )

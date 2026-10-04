@@ -49,6 +49,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Delivery PIN Code</label>
+                    {{ form.delivery_pincode }}
+                    {% if form.delivery_pincode.errors %}<small class="error">{{ form.delivery_pincode.errors.0 }}</small>{% endif %}
+                    {% if delivery_quote.configured and delivery_quote.serviceable %}
+                        <small>{{ delivery_quote.zone.name }} · {{ delivery_quote.estimated_days }} day estimate</small>
+                    {% elif not delivery_quote.configured %}
+                        <small>Delivery zones are not configured yet; no delivery fee is applied.</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
                     <label>Delivery Address</label>
                     {{ form.address }}
                     {% if form.address.errors %}
@@ -101,12 +112,12 @@
 
             <div class="summary-row">
                 <span>Delivery</span>
-                <strong>As applicable</strong>
+                <strong>{% if delivery_quote.serviceable %}₹{{ delivery_quote.delivery_fee }}{% else %}PIN code required{% endif %}</strong>
             </div>
 
             <div class="summary-row total">
-                <span>Total</span>
-                <strong>₹{{ subtotal }}</strong>
+                <span>{% if delivery_quote.serviceable %}Total{% else %}Items total{% endif %}</span>
+                <strong>₹{{ checkout_total }}</strong>
             </div>
         </aside>
 

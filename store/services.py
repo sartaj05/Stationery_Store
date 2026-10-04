@@ -1,8 +1,46 @@
+from decimal import Decimal
+from types import SimpleNamespace
+
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import transaction
 
-from .models import InventoryMovement, Order, OrderStatusEvent
+from .models import DeliveryZone, InventoryMovement, Order, OrderStatusEvent
+
+
+def get_delivery_quote(pincode):
+    pincode = (pincode or "").strip()
+    zone = DeliveryZone.objects.filter(pincode=pincode, is_active=True).first()
+    configured = DeliveryZone.objects.exists()
+
+    if not configured:
+        return SimpleNamespace(
+            pincode=pincode,
+            zone=None,
+            serviceable=True,
+            delivery_fee=Decimal("0.00"),
+            estimated_days=None,
+            configured=False,
+        )
+
+    if not zone or not zone.is_serviceable:
+        return SimpleNamespace(
+            pincode=pincode,
+            zone=zone,
+            serviceable=False,
+            delivery_fee=None,
+            estimated_days=None,
+            configured=True,
+        )
+
+    return SimpleNamespace(
+        pincode=pincode,
+        zone=zone,
+        serviceable=True,
+        delivery_fee=zone.delivery_fee,
+        estimated_days=zone.estimated_days,
+        configured=True,
+    )
 
 
 def change_stock(*, product, quantity_delta, reason, actor=None, order=None, note=""):
@@ -55,6 +93,17 @@ def send_order_status_email(order_id, to_status):
         message=(
             f"Hello {first_name},\n\n"
             f"Your order #{order.id} status is now {status_label}.\n"
+            + (
+                f"Carrier: {order.carrier_name}\n"
+                if order.carrier_name
+                else ""
+            )
+            + (
+                f"Tracking reference: {order.tracking_number}\n"
+                if order.tracking_number
+                else ""
+            )
+            + "\n"
             f"You can track it using the phone number provided at checkout.\n\n"
             "Delhi Stationery"
         ),

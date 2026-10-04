@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import (
     Category,
+    DeliveryZone,
     InventoryMovement,
     Order,
     OrderStatusEvent,
@@ -61,6 +62,12 @@ class OrderAdmin(admin.ModelAdmin):
         "product_brand_snapshot",
         "product_category_snapshot",
         "unit_price_snapshot",
+        "delivery_pincode",
+        "delivery_fee",
+        "carrier_name",
+        "tracking_number",
+        "dispatched_at",
+        "delivered_at",
         "customer_email",
         "status",
         "payment_status",
@@ -133,6 +140,23 @@ class OrderStatusEventAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(DeliveryZone)
+class DeliveryZoneAdmin(admin.ModelAdmin):
+    list_display = (
+        "pincode",
+        "name",
+        "delivery_fee",
+        "estimated_days",
+        "is_serviceable",
+        "is_active",
+    )
+    list_filter = ("is_serviceable", "is_active")
+    search_fields = ("pincode", "name")
 
     def has_delete_permission(self, request, obj=None):
         return False

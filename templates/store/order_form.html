@@ -101,6 +101,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Delivery PIN Code</label>
+                    {{ form.delivery_pincode }}
+                    {% if form.delivery_pincode.errors %}<small class="error">{{ form.delivery_pincode.errors.0 }}</small>{% endif %}
+                    {% if delivery_quote.configured and delivery_quote.serviceable %}
+                        <small>{{ delivery_quote.zone.name }} · Delivery fee ₹{{ delivery_quote.delivery_fee }}</small>
+                    {% elif not delivery_quote.configured %}
+                        <small>Delivery zones are not configured yet; no delivery fee is applied.</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
                     <label>Delhi Delivery Address</label>
                     {{ form.address }}
                     {% if form.address.errors %}

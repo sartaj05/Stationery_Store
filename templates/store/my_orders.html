@@ -99,7 +99,16 @@
                     <div class="order-address">
                         <span>Delivery Address</span>
                         <p>{{ order.address }}</p>
+                        <p>PIN code: {{ order.delivery_pincode|default:"—" }}</p>
                     </div>
+
+                    {% if order.carrier_name or order.tracking_number %}
+                        <div class="order-address">
+                            <span>Dispatch Details</span>
+                            <p>{{ order.carrier_name }} {{ order.tracking_number }}</p>
+                            {% if order.dispatched_at %}<p>Dispatched {{ order.dispatched_at|date:"d M Y, h:i A" }}</p>{% endif %}
+                        </div>
+                    {% endif %}
 
                     {% if order.status == "PENDING" or order.status == "CONFIRMED" %}
                         <div class="order-note-box warning">

@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Zones | Delhi Stationery</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/superadmin.css' %}">
+    <style>
+        .delivery-page { padding:28px; }
+        .delivery-grid { display:grid; grid-template-columns:minmax(280px, .8fr) minmax(420px, 1.2fr); gap:22px; margin-top:22px; }
+        .delivery-card { background:#fff; padding:22px; border-radius:14px; }
+        .delivery-card label { display:block; font-weight:600; margin:12px 0 5px; }
+        .delivery-card input { max-width:100%; }
+        .zone-table { width:100%; border-collapse:collapse; }
+        .zone-table th, .zone-table td { text-align:left; padding:11px 9px; border-bottom:1px solid #eee; }
+        .zone-table th { color:#777; text-transform:uppercase; font-size:.72rem; }
+        .zone-state { font-weight:700; }
+        @media(max-width:1000px) { .delivery-grid { grid-template-columns:1fr; } }
+        @media(max-width:700px) { .delivery-page { padding:18px; overflow-x:auto; } }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    {% include "accounts/_staff_sidebar.html" %}
+    <main class="dashboard-main delivery-page">
+        <header class="dashboard-header">
+            <div>
+                <h1>Delivery Zones</h1>
+                <p>Set serviceability, delivery fees, and estimated delivery time by PIN code.</p>
+            </div>
+        </header>
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}<div class="dash-msg {{ message.tags }}">{{ message }}</div>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="delivery-grid">
+            <section class="delivery-card">
+                <h2>{% if editing_zone %}Edit{% else %}Add{% endif %} PIN code</h2>
+                <form method="post" data-prevent-double-submit="true">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<small class="field-error">{{ field.errors.0 }}</small>{% endif %}
+                    {% endfor %}
+                    <button type="submit" class="action-btn primary" style="margin-top:18px">Save zone</button>
+                    {% if editing_zone %}<a class="action-btn light" href="{% url 'superadmin_delivery_zones' %}">Cancel edit</a>{% endif %}
+                </form>
+            </section>
+
+            <section class="delivery-card">
+                <h2>Configured PIN codes</h2>
+                <div style="overflow-x:auto;margin-top:12px">
+                    <table class="zone-table">
+                        <thead><tr><th>PIN</th><th>Area</th><th>Fee</th><th>ETA</th><th>Service</th><th></th></tr></thead>
+                        <tbody>
+                            {% for zone in zones %}
+                            <tr>
+                                <td>{{ zone.pincode }}</td>
+                                <td>{{ zone.name }}</td>
+                                <td>₹{{ zone.delivery_fee }}</td>
+                                <td>{{ zone.estimated_days }} days</td>
+                                <td class="zone-state">{% if zone.is_active and zone.is_serviceable %}Available{% else %}Unavailable{% endif %}</td>
+                                <td><a href="{% url 'superadmin_delivery_zone_edit' zone.id %}">Edit</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6">No zones configured yet. Until the first zone is added, delivery remains open with no fee.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>
