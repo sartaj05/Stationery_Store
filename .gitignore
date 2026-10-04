@@ -22,6 +22,8 @@ db.sqlite3
 .env.local
 .env.dev
 .env.prod
+.env.production
+.env.staging
 
 # Static and media generated files
 staticfiles/
@@ -49,6 +51,7 @@ htmlcov/
 node_modules/
 
 # Local backup files
+backups/
 *.bak
 *.backup
 *.old

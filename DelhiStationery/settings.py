@@ -11,22 +11,168 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(BASE_DIR / ".env", override=False)
+
+
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+ENVIRONMENT = os.environ.get("DJANGO_ENV", "development").strip().lower()
+if ENVIRONMENT not in {"development", "test", "staging", "production"}:
+    raise ImproperlyConfigured(
+        "DJANGO_ENV must be development, test, staging, or production."
+    )
+DEPLOYMENT_ENVIRONMENT = ENVIRONMENT in {"staging", "production"}
+
+DEBUG = _env_bool("DJANGO_DEBUG", default=ENVIRONMENT == "development")
+if DEPLOYMENT_ENVIRONMENT and DEBUG:
+    raise ImproperlyConfigured("DJANGO_DEBUG must be False in staging and production.")
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
+if not SECRET_KEY:
+    if DEPLOYMENT_ENVIRONMENT:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set in staging and production."
+        )
+    SECRET_KEY = "dev-only-insecure-key-change-before-deployment"
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        "DJANGO_ALLOWED_HOSTS",
+        "127.0.0.1,localhost" if not DEPLOYMENT_ENVIRONMENT else "",
+    ).split(",")
+    if host.strip()
+]
+if DEPLOYMENT_ENVIRONMENT and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("Set DJANGO_ALLOWED_HOSTS to the deployed hostnames.")
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+USE_POSTGRES = _env_bool(
+    "DJANGO_USE_POSTGRES",
+    default=DEPLOYMENT_ENVIRONMENT,
+)
+if DEPLOYMENT_ENVIRONMENT and not USE_POSTGRES:
+    raise ImproperlyConfigured(
+        "Staging and production deployments must use PostgreSQL."
+    )
+
+if USE_POSTGRES:
+    required_database_values = [
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_HOST",
+    ]
+    missing_database_values = [
+        name for name in required_database_values if not os.environ.get(name)
+    ]
+    if missing_database_values:
+        raise ImproperlyConfigured(
+            "Missing PostgreSQL settings: " + ", ".join(missing_database_values)
+        )
+
+    postgres_options = {}
+    postgres_sslmode = os.environ.get("POSTGRES_SSLMODE", "").strip()
+    if postgres_sslmode:
+        postgres_options["sslmode"] = postgres_sslmode
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ["POSTGRES_DB"],
+            "USER": os.environ["POSTGRES_USER"],
+            "PASSWORD": os.environ["POSTGRES_PASSWORD"],
+            "HOST": os.environ["POSTGRES_HOST"],
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": int(os.environ.get("POSTGRES_CONN_MAX_AGE", "60")),
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": postgres_options,
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+
+MEDIA_ROOT = Path(
+    os.environ.get("DJANGO_MEDIA_ROOT", str(BASE_DIR / "media"))
+).expanduser().resolve()
+if DEPLOYMENT_ENVIRONMENT and not os.environ.get("DJANGO_MEDIA_ROOT"):
+    raise ImproperlyConfigured(
+        "Set DJANGO_MEDIA_ROOT to a persistent media volume for deployment."
+    )
+
+SECURE_SSL_REDIRECT = _env_bool(
+    "DJANGO_SECURE_SSL_REDIRECT",
+    default=DEPLOYMENT_ENVIRONMENT,
+)
+SESSION_COOKIE_SECURE = _env_bool(
+    "DJANGO_SESSION_COOKIE_SECURE",
+    default=DEPLOYMENT_ENVIRONMENT,
+)
+CSRF_COOKIE_SECURE = _env_bool(
+    "DJANGO_CSRF_COOKIE_SECURE",
+    default=DEPLOYMENT_ENVIRONMENT,
+)
+SECURE_HSTS_SECONDS = int(
+    os.environ.get(
+        "DJANGO_SECURE_HSTS_SECONDS",
+        "31536000" if DEPLOYMENT_ENVIRONMENT else "0",
+    )
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS"
+)
+SECURE_HSTS_PRELOAD = _env_bool("DJANGO_SECURE_HSTS_PRELOAD")
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+if _env_bool("DJANGO_TRUST_X_FORWARDED_PROTO"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if not DEPLOYMENT_ENVIRONMENT
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("DJANGO_EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("DJANGO_EMAIL_PORT", "587"))
+EMAIL_USE_TLS = _env_bool("DJANGO_EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    "Delhi Stationery <noreply@delhistationery.in>",
+)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-t@7+s7o!$a(4i=xg&mg#+)=(qt#f-^w%g=ddn9$sr922o6&8_y"
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-
 
 INSTALLED_APPS = [
     # default django apps
@@ -69,17 +215,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "DelhiStationery.wsgi.application"
-
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
 
 
 # Password validation
@@ -128,7 +263,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
