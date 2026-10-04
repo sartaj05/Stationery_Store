@@ -2,13 +2,20 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core import mail
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import CustomerProfile
 from .forms import OrderStatusForm
-from .models import Category, InventoryMovement, Order, Product
+from .models import (
+    Category,
+    InventoryMovement,
+    Order,
+    OrderStatusEvent,
+    Product,
+)
 
 
 class StoreFlowTests(TestCase):
@@ -92,6 +99,29 @@ class StoreFlowTests(TestCase):
             movement.save()
         with self.assertRaises(ValidationError):
             movement.delete()
+        event = OrderStatusEvent.objects.get(order=order)
+        self.assertEqual(event.from_status, "")
+        self.assertEqual(event.to_status, "PENDING")
+        self.assertEqual(event.note, "Order placed")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_guest_can_receive_order_updates_by_email(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("order_product", args=[self.product.id]),
+                {
+                    "name": "Guest Customer",
+                    "phone": "9876543210",
+                    "customer_email": "guest@example.com",
+                    "address": "10 Test Road, Delhi",
+                    "quantity": 1,
+                    "payment_method": "COD",
+                },
+            )
+
+        self.assertRedirects(response, reverse("order_success"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["guest@example.com"])
 
     def test_order_price_and_product_details_are_snapshotted(self):
         response = self.client.post(
@@ -255,6 +285,9 @@ class StoreFlowTests(TestCase):
         self.assertEqual(movement.quantity_delta, -3)
         self.assertEqual(movement.reason, "SALE")
         self.assertEqual(movement.actor, self.customer)
+        history_response = self.client.get(reverse("my_orders"))
+        self.assertContains(history_response, "Status history")
+        self.assertContains(history_response, "Order placed")
 
     def test_checkout_rechecks_stock_and_keeps_cart_on_shortage(self):
         self.client.login(username="customer", password="strong-test-password")
@@ -336,6 +369,9 @@ class StoreFlowTests(TestCase):
         self.assertEqual(movement.quantity_delta, 2)
         self.assertEqual(movement.reason, "CANCELLATION")
         self.assertEqual(movement.actor, self.customer)
+        event = OrderStatusEvent.objects.get(order=order)
+        self.assertEqual(event.from_status, "PENDING")
+        self.assertEqual(event.to_status, "CANCELLED")
 
     def test_customer_cannot_cancel_another_customers_order(self):
         order = Order.objects.create(

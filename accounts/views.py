@@ -22,7 +22,7 @@ from store.forms import (
     BulkOrderStatusForm,
 )
 from store.models import Category, Order, Product, BulkOrderRequest, InventoryMovement
-from store.services import change_stock
+from store.services import change_stock, record_order_status_change
 
 
 # ===============================
@@ -593,15 +593,23 @@ def superadmin_order_list(request):
 @store_permission_required("store.manage_orders")
 def superadmin_order_detail(request, pk):
     order = get_object_or_404(
-        Order.objects.select_related("product", "product__category"),
+        Order.objects.select_related("product", "product__category").prefetch_related("status_events"),
         pk=pk,
     )
 
     if request.method == "POST":
+        previous_status = order.status
         form = OrderStatusForm(request.POST, instance=order)
 
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                order = form.save()
+                record_order_status_change(
+                    order=order,
+                    from_status=previous_status,
+                    actor=request.user,
+                    note="Updated by store staff",
+                )
             messages.success(request, "Order updated successfully.")
             return redirect("superadmin_order_detail", pk=order.pk)
     else:
@@ -1037,6 +1045,7 @@ def superadmin_export_orders_csv(request):
         "Order ID",
         "Customer Name",
         "Phone",
+        "Customer Email",
         "Address",
         "Registered Username",
         "Product",
@@ -1060,6 +1069,7 @@ def superadmin_export_orders_csv(request):
             order.id,
             order.name,
             order.phone,
+            order.customer_email or (order.customer.email if order.customer else ""),
             order.address,
             order.customer.username if order.customer else "",
             order.product_name_snapshot,

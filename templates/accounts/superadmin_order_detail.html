@@ -281,6 +281,13 @@
                             <strong>{{ order.phone }}</strong>
                         </div>
 
+                        {% if order.customer_email or order.customer.email %}
+                        <div class="info-item">
+                            <label>Email</label>
+                            <strong>{{ order.customer_email|default:order.customer.email }}</strong>
+                        </div>
+                        {% endif %}
+
                         <div class="info-item full">
                             <label>Delivery Address</label>
                             <span>{{ order.address }}</span>
@@ -419,6 +426,22 @@
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="detail-card-header"><h2>Status History</h2></div>
+                <div class="detail-body">
+                    {% for event in order.status_events.all %}
+                        <p style="padding:8px 0;border-bottom:1px solid #eee">
+                            <strong>{{ event.get_to_status_display }}</strong>
+                            — {{ event.note|default:"Status updated" }}
+                            <span style="color:#888">{{ event.created_at|date:"d M Y, h:i A" }}</span>
+                            {% if event.actor %}<small>by {{ event.actor.get_username }}</small>{% endif %}
+                        </p>
+                    {% empty %}
+                        <p>No status changes recorded yet.</p>
+                    {% endfor %}
                 </div>
             </div>
 

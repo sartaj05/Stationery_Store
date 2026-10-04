@@ -5,7 +5,14 @@ from .models import Category, Product, Order, BulkOrderRequest
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ["name", "phone", "address", "quantity", "payment_method"]
+        fields = [
+            "name",
+            "phone",
+            "customer_email",
+            "address",
+            "quantity",
+            "payment_method",
+        ]
 
         widgets = {
             "name": forms.TextInput(attrs={
@@ -15,6 +22,10 @@ class OrderForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "Enter mobile number"
+            }),
+            "customer_email": forms.EmailInput(attrs={
+                "class": "form-control",
+                "placeholder": "Optional email for order updates",
             }),
             "address": forms.Textarea(attrs={
                 "class": "form-control",
@@ -355,6 +366,14 @@ class CartCheckoutForm(forms.Form):
             "class": "form-control",
             "placeholder": "Enter 10 digit mobile number"
         })
+    )
+
+    customer_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            "class": "form-control",
+            "placeholder": "Optional email for order updates",
+        }),
     )
 
     address = forms.CharField(

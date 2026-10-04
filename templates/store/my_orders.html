@@ -119,6 +119,15 @@
                         </div>
                     {% endif %}
 
+                    {% if order.status_events.all %}
+                        <div class="order-status-history">
+                            <strong>Status history</strong>
+                            {% for event in order.status_events.all %}
+                                <p>{{ event.get_to_status_display }} — {{ event.note|default:"Status updated" }} <span>{{ event.created_at|date:"d M Y, h:i A" }}</span></p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
                     <div class="my-order-actions">
                         <a href="{% url 'product_detail' order.product.id %}" class="btn outline-btn">
                             View Product

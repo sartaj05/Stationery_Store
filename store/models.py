@@ -111,6 +111,7 @@ class Order(models.Model):
 
     name = models.CharField(max_length=120)
     phone = models.CharField(max_length=15)
+    customer_email = models.EmailField(blank=True)
     address = models.TextField()
 
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
@@ -245,6 +246,41 @@ class InventoryMovement(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Inventory movement records cannot be deleted.")
+
+
+class OrderStatusEvent(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="status_events",
+    )
+    from_status = models.CharField(max_length=30, blank=True)
+    to_status = models.CharField(max_length=30, choices=Order.STATUS_CHOICES)
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_status_events",
+    )
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self):
+        return f"Order #{self.order_id}: {self.from_status or 'Created'} → {self.to_status}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError("Order status history cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Order status history cannot be deleted.")
 
 
 class BulkOrderRequest(models.Model):

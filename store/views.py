@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Product, Category, Order
 from .forms import OrderForm, BulkOrderRequestForm, CartCheckoutForm
-from .services import change_stock
+from .services import change_stock, record_order_status_change
 
 
 # ============================================================
@@ -268,6 +268,7 @@ def _get_profile_initial_data(request):
     initial_data = {}
 
     if request.user.is_authenticated:
+        initial_data["customer_email"] = request.user.email
         initial_data["name"] = (
             request.user.get_full_name()
             or request.user.first_name
@@ -406,6 +407,12 @@ def order_product(request, product_id):
                     return redirect("order_product", product_id=locked_product.id)
 
                 order.save()
+                record_order_status_change(
+                    order=order,
+                    from_status="",
+                    actor=request.user,
+                    note="Order placed",
+                )
 
                 change_stock(
                     product=locked_product,
@@ -459,6 +466,7 @@ def track_order(request):
         orders = (
             Order.objects
             .select_related("product", "product__category")
+            .prefetch_related("status_events")
             .all()
         )
 
@@ -492,6 +500,7 @@ def my_orders(request):
     orders = (
         Order.objects
         .select_related("product", "product__category")
+        .prefetch_related("status_events")
         .filter(customer=request.user)
         .order_by("-created_at")
     )
@@ -544,9 +553,16 @@ def cancel_order(request, order_id):
         with transaction.atomic():
             product = Product.objects.select_for_update().get(id=order.product.id)
 
+            previous_status = order.status
             order.status = "CANCELLED"
             order.admin_note = "Cancelled by customer."
             order.save(update_fields=["status", "admin_note", "updated_at"])
+            record_order_status_change(
+                order=order,
+                from_status=previous_status,
+                actor=request.user,
+                note="Cancelled by customer",
+            )
 
             change_stock(
                 product=product,
@@ -735,6 +751,7 @@ def cart_checkout(request):
                         customer=request.user,
                         name=form.cleaned_data["name"],
                         phone=form.cleaned_data["phone"],
+                        customer_email=form.cleaned_data.get("customer_email", ""),
                         address=form.cleaned_data["address"],
                         product=product,
                         product_name_snapshot=product.name,
@@ -743,6 +760,12 @@ def cart_checkout(request):
                         unit_price_snapshot=product.final_price(),
                         quantity=quantity,
                         payment_method=form.cleaned_data["payment_method"],
+                    )
+                    record_order_status_change(
+                        order=order,
+                        from_status="",
+                        actor=request.user,
+                        note="Order placed",
                     )
 
                     change_stock(

@@ -11,6 +11,7 @@ A Django storefront for stationery products, customer orders, cart checkout, and
 - Permission-scoped staff workspace for product, category, order, customer, bulk request, stock, invoice, and CSV workflows
 - Seven standard staff groups for store managers, catalogue, inventory, orders, bulk requests, and customer support
 - Inventory movement history for sales, cancellations, restocks, opening balances, and reasoned manual adjustments
+- Immutable order status timelines with email updates for checkout and status changes
 - Bulk order enquiries and manual follow-up status
 - Automated Django tests for checkout, stock, cancellation, profiles, and dashboard access, with GitHub Actions CI
 
@@ -31,7 +32,7 @@ Open `http://127.0.0.1:8080/`. After migrations, run `python manage.py setup_sto
 
 Sample products are in-memory display objects. They are not inserted into the database and cannot be ordered. Once an active database product exists, only real active products are shown. Uploaded product images use Django's media storage.
 
-Cart checkout currently creates one `Order` row per cart product. Each order keeps the purchased product name, brand, category, and unit price; changing catalogue data does not rewrite order history, and products referenced by orders cannot be deleted. UPI payments begin in a pending-verification state; staff can record verified transactions and full or partial refunds. No payment gateway or webhook is connected yet. Stock changes are written to an append-only movement ledger; history starts at the inventory rollout, with existing balances recorded as opening stock. Automated coverage lives in `store/tests.py` and `accounts/tests.py`, with GitHub Actions CI.
+Cart checkout currently creates one `Order` row per cart product. Each order keeps the purchased product name, brand, category, and unit price; changing catalogue data does not rewrite order history, and products referenced by orders cannot be deleted. UPI payments begin in a pending-verification state; staff can record verified transactions and full or partial refunds. No payment gateway or webhook is connected yet. Stock changes are written to an append-only movement ledger; history starts at the inventory rollout, with existing balances recorded as opening stock. Order status changes create immutable history and send email to the account or optional checkout email. Email delivery requires a configured mail backend; current send attempts fail silently when mail is unavailable. Automated coverage lives in `store/tests.py` and `accounts/tests.py`, with GitHub Actions CI.
 
 Inventory staff can open **Inventory History** from the staff workspace, add stock from low-stock alerts, or make a signed adjustment with a required reason. Catalogue-only staff cannot change stock; new products start at zero unless the user also has the inventory permission.
 

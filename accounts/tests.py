@@ -1,11 +1,18 @@
 from io import StringIO
 
 from django.contrib.auth.models import Group, User
+from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from store.models import Category, InventoryMovement, Product
+from store.models import (
+    Category,
+    InventoryMovement,
+    Order,
+    OrderStatusEvent,
+    Product,
+)
 
 
 class SuperadminAccessTests(TestCase):
@@ -316,6 +323,67 @@ class StoreStaffRoleTests(TestCase):
             self.client.get(reverse("store_staff_home")),
             reverse("superadmin_order_list"),
         )
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_staff_order_status_change_is_logged_and_emails_customer(self):
+        customer = User.objects.create_user(
+            username="email-customer",
+            email="customer@example.com",
+            password="strong-test-password",
+        )
+        order = Order.objects.create(
+            customer=customer,
+            name="Email Customer",
+            phone="9876543210",
+            address="10 Test Road, Delhi",
+            product=self.product,
+            quantity=1,
+            status="PENDING",
+        )
+        self.client.login(
+            username="order-staff",
+            password="strong-test-password",
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("superadmin_order_detail", args=[order.id]),
+                {
+                    "status": "CONFIRMED",
+                    "admin_note": "Internal note",
+                    "payment_status": "UNPAID",
+                    "transaction_reference": "",
+                    "refund_reference": "",
+                    "refund_amount": "0",
+                },
+            )
+
+        self.assertRedirects(
+            response,
+            reverse("superadmin_order_detail", args=[order.id]),
+        )
+        event = OrderStatusEvent.objects.get(order=order)
+        self.assertEqual(event.from_status, "PENDING")
+        self.assertEqual(event.to_status, "CONFIRMED")
+        self.assertEqual(event.actor, self.order_user)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("order #", mail.outbox[0].subject.lower())
+        self.assertEqual(mail.outbox[0].to, ["customer@example.com"])
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(
+                reverse("superadmin_order_detail", args=[order.id]),
+                {
+                    "status": "CONFIRMED",
+                    "admin_note": "Follow-up note",
+                    "payment_status": "UNPAID",
+                    "transaction_reference": "",
+                    "refund_reference": "",
+                    "refund_amount": "0",
+                },
+            )
+        self.assertEqual(OrderStatusEvent.objects.filter(order=order).count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_customer_support_can_view_but_not_change_customer_accounts(self):
         self.client.login(
