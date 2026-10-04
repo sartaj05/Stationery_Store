@@ -12,7 +12,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 
 | Priority | Feature | Current gap | Suggested first slice |
 | --- | --- | --- | --- |
-| 1 | Automated tests and CI | Both app test files are empty scaffolds. Core checkout, order access, inventory and permissions have no automated regression coverage. | Add Django tests for guest ordering, cart stock checks, cancellation restock, profile ownership, and superuser-only dashboard access; run them in CI. |
+| 1 | Automated tests and CI | Implemented: Django tests now cover the core storefront and access flows, and GitHub Actions runs checks and tests for pushes and pull requests. | Expand regression coverage as each feature lands; keep CI green before merging changes. |
 | 2 | Staff roles and permissions | Custom dashboard access checks `is_superuser`; there is no limited store-manager or inventory-staff role. | Define Django groups and permissions for catalogue, orders, customers and reports, then enforce them per view. |
 | 3 | Order items and price snapshots | A cart creates one `Order` per product. `Order.total_price()` reads the product's current price, and deleting a product cascades to its orders. Product edits or deletions can change or erase historical order data. | Add a checkout/order record with related line items that store product name, SKU, unit price and quantity at purchase time. Protect referenced products or use soft deletion. |
 | 4 | Payment lifecycle | `COD` and `UPI` are stored as choices; there is no payment gateway, transaction reference, refund state or verified payment status. | Add explicit payment status and provider reference fields, then integrate a provider in test mode before accepting live payments. |
@@ -25,7 +25,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 
 ## Suggested delivery order
 
-First add tests and production configuration so later changes can be released safely. Next add order-item price snapshots and staff permissions because they protect business records and store operations. Then add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
+Automated tests and CI are in place. Next add staff permissions and immutable order-item price snapshots because they protect store operations and historical business records. Then add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
 
 ## Important behavior to retain
 

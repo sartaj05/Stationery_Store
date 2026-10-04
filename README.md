@@ -10,6 +10,7 @@ A Django storefront for stationery products, customer orders, cart checkout, and
 - Customer profiles, order history, order tracking, cancellation, and reorder
 - Superuser-only custom dashboard for product, category, order, customer, bulk request, stock, invoice, and CSV workflows
 - Bulk order enquiries and manual follow-up status
+- Automated Django tests for checkout, stock, cancellation, profiles, and dashboard access, with GitHub Actions CI
 
 ## Run locally on Windows
 

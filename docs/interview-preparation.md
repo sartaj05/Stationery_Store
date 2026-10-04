@@ -67,7 +67,7 @@ Static files are application assets deployed with the code, such as CSS, JavaScr
 
 ### What would you test first?
 
-I would test product visibility, form validation, guest direct order, authenticated cart checkout, stock reduction, cancellation stock restoration, customer order ownership, and dashboard access for anonymous, normal, staff and superuser accounts. The current test files are still empty Django scaffolds, so automated coverage is a clear gap.
+I added Django tests for sample-catalogue behavior, guest ordering, cart checkout, stock shortage, cancellation and stock restoration, customer order ownership, profile validation, and dashboard access. GitHub Actions runs the Django system check, checks for model changes without migrations, and runs the test suite on pushes and pull requests. I would extend this with concurrency tests against PostgreSQL and feature-specific tests as the roadmap is implemented.
 
 ### What security and deployment issues would you address?
 
@@ -92,7 +92,7 @@ For each topic, prepare one example from this project, one trade-off, and one im
 
 ## Honest limitations to discuss
 
-- The test modules contain no application tests yet.
+- Automated tests cover the main current flows; parallel checkout behavior still needs PostgreSQL-backed coverage.
 - Dashboard access is superuser-only; separate staff permissions are not implemented.
 - Cart checkout creates one order row per product and does not snapshot historical prices.
 - Deleting a product cascades to its related order rows.
