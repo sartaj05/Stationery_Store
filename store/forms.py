@@ -128,6 +128,8 @@ class ProductForm(forms.ModelForm):
             "category",
             "name",
             "brand",
+            "sku",
+            "barcode",
             "description",
             "price",
             "discount_price",
@@ -146,6 +148,14 @@ class ProductForm(forms.ModelForm):
             "brand": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "Enter brand name"
+            }),
+            "sku": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Optional internal stock code",
+            }),
+            "barcode": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Optional barcode / GTIN",
             }),
             "description": forms.Textarea(attrs={
                 "class": "form-control",
@@ -193,6 +203,12 @@ class ProductForm(forms.ModelForm):
                 raise forms.ValidationError("Only JPG, PNG, and WEBP images are allowed.")
 
         return image
+
+    def clean_sku(self):
+        return (self.cleaned_data.get("sku") or "").strip().upper() or None
+
+    def clean_barcode(self):
+        return (self.cleaned_data.get("barcode") or "").strip().upper() or None
 
     def clean(self):
         cleaned_data = super().clean()

@@ -36,6 +36,8 @@
             {% if product.brand %}
                 <p class="brand-line">Brand: {{ product.brand }}</p>
             {% endif %}
+            {% if product.sku %}<p class="brand-line">SKU: {{ product.sku }}</p>{% endif %}
+            {% if product.barcode %}<p class="brand-line">Barcode: {{ product.barcode }}</p>{% endif %}
 
             <p>{{ product.description|default:"Product description will be updated soon." }}</p>
 

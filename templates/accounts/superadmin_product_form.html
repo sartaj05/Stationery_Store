@@ -550,6 +550,18 @@
                                 {% endif %}
                             </div>
 
+                            <div class="form-group">
+                                <label for="{{ form.sku.id_for_label }}">SKU</label>
+                                {{ form.sku }}
+                                {% if form.sku.errors %}<div class="field-error">{{ form.sku.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.barcode.id_for_label }}">Barcode / GTIN</label>
+                                {{ form.barcode }}
+                                {% if form.barcode.errors %}<div class="field-error">{{ form.barcode.errors.0 }}</div>{% endif %}
+                            </div>
+
                             {% if form.stock %}
                                 <div class="form-group">
                                     <label for="{{ form.stock.id_for_label }}">Opening Stock Quantity</label>

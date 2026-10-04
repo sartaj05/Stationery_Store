@@ -452,6 +452,8 @@ def superadmin_product_list(request):
         products = products.filter(
             Q(name__icontains=query) |
             Q(brand__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(barcode__icontains=query) |
             Q(description__icontains=query)
         )
 
@@ -1048,6 +1050,8 @@ def superadmin_export_products_csv(request):
         products = products.filter(
             Q(name__icontains=query) |
             Q(brand__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(barcode__icontains=query) |
             Q(description__icontains=query)
         )
 
@@ -1073,6 +1077,8 @@ def superadmin_export_products_csv(request):
         "Product Name",
         "Category",
         "Brand",
+        "SKU",
+        "Barcode",
         "Description",
         "Original Price",
         "Discount Price",
@@ -1090,6 +1096,8 @@ def superadmin_export_products_csv(request):
             product.name,
             product.category.name if product.category else "",
             product.brand,
+            product.sku or "",
+            product.barcode or "",
             product.description,
             product.price,
             product.discount_price if product.discount_price else "",
@@ -1121,6 +1129,8 @@ def superadmin_export_orders_csv(request):
             Q(name__icontains=query) |
             Q(phone__icontains=query) |
             Q(product__name__icontains=query) |
+            Q(product_sku_snapshot__icontains=query) |
+            Q(product_barcode_snapshot__icontains=query) |
             Q(customer__username__icontains=query)
         )
 
@@ -1144,6 +1154,8 @@ def superadmin_export_orders_csv(request):
         "Tracking Reference",
         "Registered Username",
         "Product",
+        "SKU",
+        "Barcode",
         "Category",
         "Quantity",
         "Unit Price",
@@ -1172,6 +1184,8 @@ def superadmin_export_orders_csv(request):
             order.tracking_number,
             order.customer.username if order.customer else "",
             order.product_name_snapshot,
+            order.product_sku_snapshot,
+            order.product_barcode_snapshot,
             order.product_category_snapshot,
             order.quantity,
             order.unit_price_snapshot,

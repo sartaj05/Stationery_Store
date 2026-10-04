@@ -414,7 +414,7 @@
                         name="q"
                         value="{{ query|default:'' }}"
                         class="form-control"
-                        placeholder="Search product, brand, description..."
+                        placeholder="Search name, brand, SKU or barcode..."
                     >
                 </div>
 
@@ -496,6 +496,8 @@
                                                 {% else %}
                                                     No brand added
                                                 {% endif %}
+                                                {% if product.sku %}<br>SKU: {{ product.sku }}{% endif %}
+                                                {% if product.barcode %}<br>Barcode: {{ product.barcode }}{% endif %}
                                             </span>
                                         </div>
                                     </div>

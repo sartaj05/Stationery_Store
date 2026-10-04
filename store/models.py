@@ -35,6 +35,8 @@ class Product(models.Model):
     )
     name = models.CharField(max_length=200)
     brand = models.CharField(max_length=100, blank=True)
+    sku = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    barcode = models.CharField(max_length=64, blank=True, null=True, unique=True)
     description = models.TextField(blank=True)
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -127,6 +129,8 @@ class Order(models.Model):
     product_name_snapshot = models.CharField(max_length=200, blank=True)
     product_brand_snapshot = models.CharField(max_length=100, blank=True)
     product_category_snapshot = models.CharField(max_length=100, blank=True)
+    product_sku_snapshot = models.CharField(max_length=64, blank=True)
+    product_barcode_snapshot = models.CharField(max_length=64, blank=True)
     unit_price_snapshot = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -197,6 +201,10 @@ class Order(models.Model):
                 self.product_brand_snapshot = product.brand
             if not self.product_category_snapshot:
                 self.product_category_snapshot = product.category.name
+            if not self.product_sku_snapshot:
+                self.product_sku_snapshot = product.sku or ""
+            if not self.product_barcode_snapshot:
+                self.product_barcode_snapshot = product.barcode or ""
             if self.unit_price_snapshot == 0:
                 self.unit_price_snapshot = product.final_price()
         if self.payment_status == "PAID" and self.paid_at is None:
@@ -396,6 +404,8 @@ class BulkQuoteLine(models.Model):
     product_name_snapshot = models.CharField(max_length=200)
     product_brand_snapshot = models.CharField(max_length=100, blank=True)
     product_category_snapshot = models.CharField(max_length=100, blank=True)
+    product_sku_snapshot = models.CharField(max_length=64, blank=True)
+    product_barcode_snapshot = models.CharField(max_length=64, blank=True)
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -412,6 +422,8 @@ class BulkQuoteLine(models.Model):
             self.product_name_snapshot = product.name
             self.product_brand_snapshot = product.brand
             self.product_category_snapshot = product.category.name
+            self.product_sku_snapshot = product.sku or ""
+            self.product_barcode_snapshot = product.barcode or ""
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -39,6 +39,13 @@
             {% endfor %}
         </select>
 
+        <select name="sort" aria-label="Sort products">
+            <option value="newest" {% if selected_sort == "newest" %}selected{% endif %}>Newest first</option>
+            <option value="name" {% if selected_sort == "name" %}selected{% endif %}>Name A to Z</option>
+            <option value="price_low" {% if selected_sort == "price_low" %}selected{% endif %}>Price: low to high</option>
+            <option value="price_high" {% if selected_sort == "price_high" %}selected{% endif %}>Price: high to low</option>
+        </select>
+
         <button type="submit" class="btn primary-btn">Search</button>
         <a href="{% url 'product_list' %}" class="btn outline-btn">Reset</a>
     </form>
@@ -64,6 +71,37 @@
             </div>
         {% endfor %}
     </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="catalog-pagination" aria-label="Product pages">
+            {% if page_obj.has_previous %}
+                <a href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+            {% endif %}
+        </nav>
+    {% endif %}
 </section>
+
+<style>
+    .catalog-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 18px;
+        margin-top: 30px;
+    }
+    .catalog-pagination a {
+        padding: 9px 16px;
+        border: 1px solid var(--cream);
+        border-radius: 999px;
+        color: var(--teal);
+        text-decoration: none;
+        font-weight: 700;
+    }
+    .catalog-pagination span { color: #777; }
+</style>
 
 {% endblock %}

@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
-from django.db.models import Q
+from django.core.paginator import Paginator
+from django.db.models import DecimalField, Q
+from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -336,6 +338,9 @@ def home(request):
 def product_list(request):
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
+    if sort not in {"newest", "name", "price_low", "price_high"}:
+        sort = "newest"
 
     real_active_products = Product.objects.filter(is_active=True)
     has_real_products = real_active_products.exists()
@@ -349,12 +354,31 @@ def product_list(request):
             products = products.filter(
                 Q(name__icontains=query)
                 | Q(brand__icontains=query)
+                | Q(sku__icontains=query)
+                | Q(barcode__icontains=query)
                 | Q(description__icontains=query)
                 | Q(category__name__icontains=query)
             )
 
         if category_slug:
             products = products.filter(category__slug=category_slug)
+
+        if sort == "name":
+            products = products.order_by("name", "pk")
+        elif sort in {"price_low", "price_high"}:
+            products = products.annotate(
+                _catalog_price=Coalesce(
+                    "discount_price",
+                    "price",
+                    output_field=DecimalField(max_digits=10, decimal_places=2),
+                )
+            )
+            products = products.order_by(
+                "_catalog_price" if sort == "price_low" else "-_catalog_price",
+                "name",
+            )
+        else:
+            products = products.order_by("-created_at", "pk")
 
     else:
         categories = get_dummy_categories()
@@ -365,11 +389,25 @@ def product_list(request):
         )
         using_dummy_content = True
 
+        if sort == "name":
+            products = sorted(products, key=lambda product: product.name.casefold())
+        elif sort == "price_low":
+            products = sorted(products, key=lambda product: (product.final_price, product.name.casefold()))
+        elif sort == "price_high":
+            products = sorted(products, key=lambda product: (-product.final_price, product.name.casefold()))
+
+    page_obj = Paginator(products, 12).get_page(request.GET.get("page"))
+    pagination_params = request.GET.copy()
+    pagination_params.pop("page", None)
+
     return render(request, "store/product_list.html", {
-        "products": products,
+        "products": page_obj.object_list,
+        "page_obj": page_obj,
         "categories": categories,
         "query": query,
         "selected_category": category_slug,
+        "selected_sort": sort,
+        "pagination_query": pagination_params.urlencode(),
         "using_dummy_content": using_dummy_content,
     })
 
@@ -654,6 +692,8 @@ def accept_bulk_quote(request, token):
                                 product_name_snapshot=line.product_name_snapshot,
                                 product_brand_snapshot=line.product_brand_snapshot,
                                 product_category_snapshot=line.product_category_snapshot,
+                                product_sku_snapshot=line.product_sku_snapshot,
+                                product_barcode_snapshot=line.product_barcode_snapshot,
                                 unit_price_snapshot=line.unit_price,
                                 quantity=line.quantity,
                                 payment_method="COD",

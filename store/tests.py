@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import CustomerProfile
-from .forms import OrderStatusForm
+from .forms import OrderStatusForm, ProductForm
 from .models import (
     Category,
     DeliveryZone,
@@ -65,6 +65,65 @@ class StoreFlowTests(TestCase):
         self.assertFalse(response.context["using_dummy_content"])
         self.assertEqual(list(response.context["products"]), [self.product])
         self.assertFalse(getattr(response.context["products"][0], "is_dummy", False))
+
+    def test_catalogue_searches_product_codes_and_keeps_filters_when_paginating(self):
+        self.product.sku = "NB-001"
+        self.product.barcode = "1234567890123"
+        self.product.save(update_fields=["sku", "barcode"])
+
+        sku_response = self.client.get(reverse("product_list"), {"q": "NB-001"})
+        barcode_response = self.client.get(
+            reverse("product_list"),
+            {"q": "1234567890123"},
+        )
+        self.assertEqual(list(sku_response.context["products"]), [self.product])
+        self.assertEqual(list(barcode_response.context["products"]), [self.product])
+
+        for index in range(12):
+            Product.objects.create(
+                category=self.category,
+                name=f"Sorted Product {index:02d}",
+                price=Decimal(index + 1),
+                stock=5,
+            )
+        page_one = self.client.get(
+            reverse("product_list"),
+            {"sort": "price_low"},
+        )
+        self.assertEqual(page_one.context["page_obj"].paginator.num_pages, 2)
+        self.assertEqual(len(page_one.context["products"]), 12)
+        self.assertEqual(page_one.context["products"][0].name, "Sorted Product 00")
+        self.assertEqual(page_one.context["pagination_query"], "sort=price_low")
+
+        page_two = self.client.get(
+            reverse("product_list"),
+            {"sort": "price_low", "page": "2"},
+        )
+        self.assertEqual(page_two.context["page_obj"].number, 2)
+        self.assertEqual(len(page_two.context["products"]), 1)
+
+    def test_product_form_normalizes_codes_and_rejects_duplicate_skus(self):
+        self.product.sku = "NB-001"
+        self.product.save(update_fields=["sku"])
+        form = ProductForm(
+            data={
+                "category": self.category.pk,
+                "name": "Duplicate notebook code",
+                "brand": "Sample Brand",
+                "sku": "  nb-001  ",
+                "barcode": "",
+                "description": "",
+                "price": "12.00",
+                "discount_price": "",
+                "is_featured": "",
+                "is_active": "on",
+            },
+            include_stock=False,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("sku", form.errors)
+
 
     def test_inactive_products_do_not_replace_sample_catalogue(self):
         self.product.is_active = False
@@ -131,6 +190,9 @@ class StoreFlowTests(TestCase):
         self.assertEqual(mail.outbox[0].to, ["guest@example.com"])
 
     def test_order_price_and_product_details_are_snapshotted(self):
+        self.product.sku = "NB-001"
+        self.product.barcode = "1234567890123"
+        self.product.save(update_fields=["sku", "barcode"])
         response = self.client.post(
             reverse("order_product", args=[self.product.id]),
             {
@@ -147,16 +209,27 @@ class StoreFlowTests(TestCase):
 
         self.product.name = "Updated Notebook"
         self.product.brand = "Updated Brand"
+        self.product.sku = "NB-002"
+        self.product.barcode = "9999999999999"
         self.product.price = Decimal("150.00")
         self.product.discount_price = Decimal("125.00")
         self.category.name = "Updated Category"
         self.category.save(update_fields=["name"])
-        self.product.save(update_fields=["name", "brand", "price", "discount_price"])
+        self.product.save(update_fields=[
+            "name",
+            "brand",
+            "sku",
+            "barcode",
+            "price",
+            "discount_price",
+        ])
 
         order.refresh_from_db()
         self.assertEqual(order.product_name_snapshot, "A4 Notebook")
         self.assertEqual(order.product_brand_snapshot, "Sample Brand")
         self.assertEqual(order.product_category_snapshot, "Notebooks")
+        self.assertEqual(order.product_sku_snapshot, "NB-001")
+        self.assertEqual(order.product_barcode_snapshot, "1234567890123")
         self.assertEqual(order.unit_price_snapshot, Decimal("90.00"))
         self.assertEqual(order.total_price(), Decimal("180.00"))
 
@@ -509,6 +582,8 @@ class BulkQuoteWorkflowTests(TestCase):
             category=self.category,
             name="Bulk Notebook",
             brand="School Brand",
+            sku="BULK-NB-01",
+            barcode="9876543210001",
             price=Decimal("100.00"),
             discount_price=Decimal("90.00"),
             stock=20,
@@ -609,6 +684,8 @@ class BulkQuoteWorkflowTests(TestCase):
         self.assertEqual(sum(order.total_price() for order in orders), Decimal("236.00"))
         self.assertEqual(orders[0].product_name_snapshot, "Bulk Notebook")
         self.assertEqual(orders[0].unit_price_snapshot, Decimal("82.50"))
+        self.assertEqual(orders[0].product_sku_snapshot, "BULK-NB-01")
+        self.assertEqual(orders[0].product_barcode_snapshot, "9876543210001")
         self.product.refresh_from_db()
         self.second_product.refresh_from_db()
         self.assertEqual(self.product.stock, 18)

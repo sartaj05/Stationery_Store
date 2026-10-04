@@ -23,6 +23,8 @@ class ProductAdmin(admin.ModelAdmin):
         "name",
         "category",
         "brand",
+        "sku",
+        "barcode",
         "price",
         "discount_price",
         "stock",
@@ -31,7 +33,7 @@ class ProductAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("category", "is_featured", "is_active", "created_at")
-    search_fields = ("name", "brand", "description")
+    search_fields = ("name", "brand", "sku", "barcode", "description")
     list_editable = (
         "price",
         "discount_price",
@@ -54,13 +56,22 @@ class OrderAdmin(admin.ModelAdmin):
         "total_price",
         "created_at",
     )
-    search_fields = ("name", "phone", "address", "product_name_snapshot")
+    search_fields = (
+        "name",
+        "phone",
+        "address",
+        "product_name_snapshot",
+        "product_sku_snapshot",
+        "product_barcode_snapshot",
+    )
     list_filter = ("payment_method", "payment_status", "status", "created_at")
     readonly_fields = (
         "product",
         "product_name_snapshot",
         "product_brand_snapshot",
         "product_category_snapshot",
+        "product_sku_snapshot",
+        "product_barcode_snapshot",
         "unit_price_snapshot",
         "delivery_pincode",
         "delivery_fee",

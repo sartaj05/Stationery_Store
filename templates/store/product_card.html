@@ -33,6 +33,7 @@
         {% if product.brand %}
             <p class="brand-text">{{ product.brand }}</p>
         {% endif %}
+        {% if product.sku %}<small>SKU: {{ product.sku }}</small>{% endif %}
 
         <p>{{ product.description|truncatewords:14 }}</p>
 
