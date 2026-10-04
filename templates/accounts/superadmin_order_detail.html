@@ -292,6 +292,18 @@
                         </div>
 
                         <div class="info-item">
+                            <label>Payment Status</label>
+                            <strong>{{ order.get_payment_status_display }}</strong>
+                        </div>
+
+                        {% if order.transaction_reference %}
+                        <div class="info-item">
+                            <label>Transaction Reference</label>
+                            <strong>{{ order.transaction_reference }}</strong>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-item">
                             <label>Current Status</label>
                             <strong>{{ order.get_status_display }}</strong>
                         </div>
@@ -338,6 +350,38 @@
                             {{ form.admin_note }}
                             {% if form.admin_note.errors %}
                                 <small style="color:var(--ruby)">{{ form.admin_note.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payment Status</label>
+                            {{ form.payment_status }}
+                            {% if form.payment_status.errors %}
+                                <small style="color:var(--ruby)">{{ form.payment_status.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Transaction Reference</label>
+                            {{ form.transaction_reference }}
+                            {% if form.transaction_reference.errors %}
+                                <small style="color:var(--ruby)">{{ form.transaction_reference.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Refund Reference</label>
+                            {{ form.refund_reference }}
+                            {% if form.refund_reference.errors %}
+                                <small style="color:var(--ruby)">{{ form.refund_reference.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Refund Amount</label>
+                            {{ form.refund_amount }}
+                            {% if form.refund_amount.errors %}
+                                <small style="color:var(--ruby)">{{ form.refund_amount.errors.0 }}</small>
                             {% endif %}
                         </div>
 

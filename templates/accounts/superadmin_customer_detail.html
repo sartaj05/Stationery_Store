@@ -683,7 +683,7 @@
                                 <td>
                                     <div class="order-main">
                                         <strong>#{{ order.id }}</strong>
-                                        <span>{{ order.payment_method }}</span>
+                                        <span>{{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}</span>
                                     </div>
                                 </td>
 

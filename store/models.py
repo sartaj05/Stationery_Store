@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class Category(models.Model):
@@ -90,6 +91,15 @@ class Order(models.Model):
         ("CANCELLED", "Cancelled"),
     ]
 
+    PAYMENT_STATUS_CHOICES = [
+        ("UNPAID", "Unpaid"),
+        ("PENDING", "Payment pending verification"),
+        ("PAID", "Paid / verified"),
+        ("FAILED", "Failed"),
+        ("PARTIALLY_REFUNDED", "Partially refunded"),
+        ("REFUNDED", "Refunded"),
+    ]
+
     customer = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -118,6 +128,20 @@ class Order(models.Model):
         choices=PAYMENT_CHOICES,
         default="COD"
     )
+    payment_status = models.CharField(
+        max_length=24,
+        choices=PAYMENT_STATUS_CHOICES,
+        default="UNPAID",
+    )
+    transaction_reference = models.CharField(max_length=120, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    refund_reference = models.CharField(max_length=120, blank=True)
+    refund_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
+    refunded_at = models.DateTimeField(null=True, blank=True)
 
     status = models.CharField(
         max_length=30,
@@ -140,6 +164,12 @@ class Order(models.Model):
         return self.unit_price_snapshot * self.quantity
 
     def save(self, *args, **kwargs):
+        if (
+            self._state.adding
+            and self.payment_method == "UPI"
+            and self.payment_status == "UNPAID"
+        ):
+            self.payment_status = "PENDING"
         if self.product_id and (
             not self.product_name_snapshot
             or not self.product_category_snapshot
@@ -154,6 +184,10 @@ class Order(models.Model):
                 self.product_category_snapshot = product.category.name
             if self.unit_price_snapshot == 0:
                 self.unit_price_snapshot = product.final_price()
+        if self.payment_status == "PAID" and self.paid_at is None:
+            self.paid_at = timezone.now()
+        if self.payment_status in {"PARTIALLY_REFUNDED", "REFUNDED"} and self.refunded_at is None:
+            self.refunded_at = timezone.now()
         super().save(*args, **kwargs)
 
     def __str__(self):

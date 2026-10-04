@@ -175,16 +175,82 @@ class ProductForm(forms.ModelForm):
 class OrderStatusForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ["status", "admin_note"]
+        fields = [
+            "status",
+            "admin_note",
+            "payment_status",
+            "transaction_reference",
+            "refund_reference",
+            "refund_amount",
+        ]
 
         widgets = {
             "status": forms.Select(attrs={"class": "form-control"}),
+            "payment_status": forms.Select(attrs={"class": "form-control"}),
+            "transaction_reference": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "UPI / provider transaction ID",
+            }),
+            "refund_reference": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Refund transaction ID",
+            }),
+            "refund_amount": forms.NumberInput(attrs={
+                "class": "form-control",
+                "step": "0.01",
+                "min": "0",
+            }),
             "admin_note": forms.Textarea(attrs={
                 "class": "form-control",
                 "rows": 4,
                 "placeholder": "Internal note for this order"
             }),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_status = cleaned_data.get("payment_status")
+        transaction_reference = cleaned_data.get("transaction_reference", "").strip()
+        refund_reference = cleaned_data.get("refund_reference", "").strip()
+        refund_amount = cleaned_data.get("refund_amount")
+
+        if (
+            payment_status == "PAID"
+            and self.instance.payment_method == "UPI"
+            and not transaction_reference
+        ):
+            self.add_error(
+                "transaction_reference",
+                "Enter the UPI transaction reference before marking payment verified.",
+            )
+
+        if payment_status in {"PARTIALLY_REFUNDED", "REFUNDED"}:
+            if self.instance.payment_status not in {"PAID", "PARTIALLY_REFUNDED"}:
+                self.add_error(
+                    "payment_status",
+                    "Only a verified payment can be refunded.",
+                )
+            if not refund_reference:
+                self.add_error("refund_reference", "Enter the refund transaction reference.")
+            if refund_amount is None or refund_amount <= 0:
+                self.add_error("refund_amount", "Refund amount must be greater than zero.")
+            elif refund_amount > self.instance.total_price():
+                self.add_error(
+                    "refund_amount",
+                    "Refund amount cannot be greater than the order total.",
+                )
+            elif payment_status == "REFUNDED" and refund_amount != self.instance.total_price():
+                self.add_error(
+                    "refund_amount",
+                    "A full refund must match the order total. Use partial refund for a smaller amount.",
+                )
+            elif payment_status == "PARTIALLY_REFUNDED" and refund_amount >= self.instance.total_price():
+                self.add_error(
+                    "refund_amount",
+                    "Use refunded when returning the full order total.",
+                )
+
+        return cleaned_data
 
 
 class BulkOrderRequestForm(forms.ModelForm):

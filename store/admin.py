@@ -41,18 +41,25 @@ class OrderAdmin(admin.ModelAdmin):
         "product_name_snapshot",
         "quantity",
         "payment_method",
+        "payment_status",
         "status",
         "total_price",
         "created_at",
     )
     search_fields = ("name", "phone", "address", "product_name_snapshot")
-    list_filter = ("payment_method", "status", "created_at")
+    list_filter = ("payment_method", "payment_status", "status", "created_at")
     readonly_fields = (
         "product",
         "product_name_snapshot",
         "product_brand_snapshot",
         "product_category_snapshot",
         "unit_price_snapshot",
+        "payment_status",
+        "transaction_reference",
+        "paid_at",
+        "refund_reference",
+        "refund_amount",
+        "refunded_at",
         "created_at",
         "updated_at",
     )

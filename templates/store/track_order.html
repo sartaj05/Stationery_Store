@@ -91,7 +91,7 @@
                                 <div><span>Name</span><strong>{{ order.name }}</strong></div>
                                 <div><span>Phone</span><strong>{{ order.phone }}</strong></div>
                                 <div><span>Qty</span><strong>{{ order.quantity }}</strong></div>
-                                <div><span>Payment</span><strong>{{ order.get_payment_method_display }}</strong></div>
+                                <div><span>Payment</span><strong>{{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}</strong></div>
                                 <div><span>Total</span><strong>₹{{ order.total_price }}</strong></div>
                                 <div><span>Status</span><strong>{{ order.get_status_display }}</strong></div>
                             </div>

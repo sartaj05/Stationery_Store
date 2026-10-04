@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import CustomerProfile
+from .forms import OrderStatusForm
 from .models import Category, Order, Product
 
 
@@ -123,6 +124,79 @@ class StoreFlowTests(TestCase):
 
         with self.assertRaises(ProtectedError):
             self.product.delete()
+
+    def test_upi_order_starts_pending_and_can_be_marked_verified(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            name="Test Customer",
+            phone="9876543210",
+            address="10 Test Road, Delhi",
+            product=self.product,
+            quantity=1,
+            payment_method="UPI",
+        )
+        self.assertEqual(order.payment_status, "PENDING")
+
+        missing_reference_form = OrderStatusForm(
+            {
+                "status": "PENDING",
+                "admin_note": "",
+                "payment_status": "PAID",
+                "transaction_reference": "",
+                "refund_reference": "",
+                "refund_amount": "0",
+            },
+            instance=order,
+        )
+        self.assertFalse(missing_reference_form.is_valid())
+        self.assertIn("transaction_reference", missing_reference_form.errors)
+
+        verified_form = OrderStatusForm(
+            {
+                "status": "PENDING",
+                "admin_note": "",
+                "payment_status": "PAID",
+                "transaction_reference": "UPI-TXN-123",
+                "refund_reference": "",
+                "refund_amount": "0",
+            },
+            instance=order,
+        )
+        self.assertTrue(verified_form.is_valid(), verified_form.errors)
+        verified_order = verified_form.save()
+        self.assertIsNotNone(verified_order.paid_at)
+        self.assertEqual(verified_order.transaction_reference, "UPI-TXN-123")
+
+    def test_refund_requires_verified_payment_and_valid_refund_reference(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            name="Test Customer",
+            phone="9876543210",
+            address="10 Test Road, Delhi",
+            product=self.product,
+            quantity=1,
+            payment_method="UPI",
+        )
+        order.payment_status = "PAID"
+        order.transaction_reference = "UPI-TXN-123"
+        order.save()
+
+        refund_form = OrderStatusForm(
+            {
+                "status": "PENDING",
+                "admin_note": "",
+                "payment_status": "PARTIALLY_REFUNDED",
+                "transaction_reference": "UPI-TXN-123",
+                "refund_reference": "REF-TXN-456",
+                "refund_amount": "25.00",
+            },
+            instance=order,
+        )
+        self.assertTrue(refund_form.is_valid(), refund_form.errors)
+        refunded_order = refund_form.save()
+        self.assertEqual(refunded_order.refund_amount, Decimal("25.00"))
+        self.assertEqual(refunded_order.refund_reference, "REF-TXN-456")
+        self.assertIsNotNone(refunded_order.refunded_at)
 
     def test_direct_order_cannot_exceed_available_stock(self):
         response = self.client.post(

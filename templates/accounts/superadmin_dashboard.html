@@ -667,7 +667,7 @@
 
                                 <td>
                                     <span style="background:rgba(26,107,107,.1);color:var(--teal);padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:700">
-                                        {{ order.payment_method }}
+                                        {{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}
                                     </span>
                                 </td>
 

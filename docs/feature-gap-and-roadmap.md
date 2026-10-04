@@ -15,7 +15,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 | 1 | Automated tests and CI | Implemented: Django tests now cover the core storefront and access flows, and GitHub Actions runs checks and tests for pushes and pull requests. | Expand regression coverage as each feature lands; keep CI green before merging changes. |
 | 2 | Staff roles and permissions | Implemented: scoped Django permissions protect staff modules, templates hide unavailable actions, and `python manage.py setup_store_roles` creates seven standard groups. | Assign each staff account only the group needed for its work; review permissions whenever a new staff feature is added. |
 | 3 | Order items and price snapshots | Snapshot implementation complete: every order row stores product name, brand, category and unit price at purchase time; existing rows are backfilled, totals use the snapshot, and referenced products are protected from deletion. Cart checkout still creates one order row per product rather than grouping a multi-product cart under a single order number. | Consider parent-order grouping and SKU snapshots when receipts or fulfilment need one order record for a whole cart. |
-| 4 | Payment lifecycle | `COD` and `UPI` are stored as choices; there is no payment gateway, transaction reference, refund state or verified payment status. | Add explicit payment status and provider reference fields, then integrate a provider in test mode before accepting live payments. |
+| 4 | Payment lifecycle | Implemented manual lifecycle: orders track unpaid/pending/verified/failed/partial-refund/refunded states, transaction and refund references, refund amount, and timestamps; staff updates validate the transitions. No gateway or webhook is connected. | Select a payment provider, then add signed, idempotent webhook processing in the provider's test environment before live payment acceptance. |
 | 5 | Inventory movement history | Stock decreases and restocks update the product quantity directly; there is no auditable movement ledger. | Record each sale, cancellation, manual adjustment and restock with quantity delta, actor, reason and timestamp. |
 | 6 | Order status history and customer notifications | An order stores only its current status and internal note; status changes do not create history or send notifications. | Add status-event records and send email notifications for confirmation, dispatch, delivery and cancellation. |
 | 7 | Delivery zones and tracking | Delivery copy is static and there is no postal-code serviceability check, delivery charge, dispatch assignment or carrier tracking number. | Make serviceable pincodes, delivery fee rules and delivery state configurable, then add a tracking reference to orders. |
@@ -25,7 +25,7 @@ The sample catalogue is generated in memory and appears only when there are no a
 
 ## Suggested delivery order
 
-Automated tests and CI, scoped staff roles, and immutable order price snapshots are in place. Next add payment and inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
+Automated tests and CI, scoped staff roles, immutable order price snapshots, and a manual payment lifecycle are in place. Next add inventory history. Customer notifications, delivery tracking and bulk conversion can follow as the fulfilment workflow matures. Catalogue enhancements should be prioritized from real customer usage.
 
 ## Important behavior to retain
 

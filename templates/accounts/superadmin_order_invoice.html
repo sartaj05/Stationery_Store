@@ -454,6 +454,25 @@
                 <strong>{{ order.payment_method }}</strong>
             </div>
 
+            <div class="summary-row">
+                <span>Payment Status</span>
+                <strong>{{ order.get_payment_status_display }}</strong>
+            </div>
+
+            {% if order.transaction_reference %}
+            <div class="summary-row">
+                <span>Transaction Reference</span>
+                <strong>{{ order.transaction_reference }}</strong>
+            </div>
+            {% endif %}
+
+            {% if order.refund_amount %}
+            <div class="summary-row">
+                <span>Refunded Amount</span>
+                <strong>₹{{ order.refund_amount }}</strong>
+            </div>
+            {% endif %}
+
             <div class="summary-row total">
                 <span>Total Amount</span>
                 <strong>₹{{ order.total_price }}</strong>

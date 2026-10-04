@@ -30,7 +30,7 @@ Open `http://127.0.0.1:8080/`. After migrations, run `python manage.py setup_sto
 
 Sample products are in-memory display objects. They are not inserted into the database and cannot be ordered. Once an active database product exists, only real active products are shown. Uploaded product images use Django's media storage.
 
-Cart checkout currently creates one `Order` row per cart product. Each order keeps the purchased product name, brand, category, and unit price; changing catalogue data does not rewrite order history, and products referenced by orders cannot be deleted. The `UPI` choice is a recorded payment method; a payment provider is not integrated. Automated coverage lives in `store/tests.py` and `accounts/tests.py`, with GitHub Actions CI.
+Cart checkout currently creates one `Order` row per cart product. Each order keeps the purchased product name, brand, category, and unit price; changing catalogue data does not rewrite order history, and products referenced by orders cannot be deleted. UPI payments begin in a pending-verification state; staff can record verified transactions and full or partial refunds. No payment gateway or webhook is connected yet. Automated coverage lives in `store/tests.py` and `accounts/tests.py`, with GitHub Actions CI.
 
 ## Project documentation
 
