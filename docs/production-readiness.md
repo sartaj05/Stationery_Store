@@ -1,6 +1,8 @@
 # Production readiness
 
-The project now selects local SQLite settings in development and PostgreSQL settings in staging or production. Deployment settings fail early when the secret key, allowed hosts, PostgreSQL credentials, or persistent media root are missing. Production secrets belong in the hosting provider's secret store; do not commit a populated `.env` file.
+The repository contains production-oriented configuration, but the project has not been deployed to a production host. The settings select local SQLite for development and require PostgreSQL and persistent media storage in staging or production. They fail early when the secret key, allowed hosts, PostgreSQL credentials, or persistent media root are missing. Production secrets belong in the hosting provider's secret store; do not commit a populated `.env` file.
+
+**Release blocker:** the public `track_order` view accepts a phone number and/or sequential order ID without verifying ownership. A phone-only search returns all matching orders; an ID alone can return one. The results include customer name, phone, address, product, total, payment state, and status history. Before exposing real customer orders, require an authenticated owner or a private high-entropy per-order token with expiry and rate limiting. Restrict each lookup to one authorized order and minimize disclosed fields. This privacy change is not implemented yet.
 
 ## Configure a deployment
 
@@ -11,6 +13,8 @@ The project now selects local SQLite settings in development and PostgreSQL sett
 5. Mount durable storage at `DJANGO_MEDIA_ROOT`. This directory contains uploaded product images; container-local storage is not durable.
 6. Configure a real SMTP backend and sender address before relying on email notifications.
 7. Configure the reverse proxy to terminate HTTPS. Set `DJANGO_TRUST_X_FORWARDED_PROTO=True` only when the trusted proxy replaces incoming `X-Forwarded-Proto` headers with the verified connection scheme.
+
+Use an isolated staging environment first. Confirm the proxy's forwarded-protocol behavior, CSRF trusted origins, production static-file serving, and uploaded-image persistence there. Do not expose order lookup until the privacy blocker above is resolved.
 
 ## Release commands
 
@@ -29,7 +33,7 @@ Serve `STATIC_ROOT` through the chosen static server or CDN. Serve the media mou
 
 ## Database and media backups
 
-Run `scripts/backup_postgres.ps1` from a Windows administration host with the PostgreSQL client installed and the `POSTGRES_*` and `DJANGO_MEDIA_ROOT` variables available. Pass a backup directory on an encrypted, access-controlled volume. The script creates one custom-format PostgreSQL dump and one compressed media archive with a UTC timestamp.
+Run `scripts/backup_postgres.ps1` from a Windows administration host with the PostgreSQL client installed and the `POSTGRES_*` and `DJANGO_MEDIA_ROOT` variables available. Pass a backup directory on an encrypted, access-controlled volume. The script creates one custom-format PostgreSQL dump and one compressed media archive with a UTC timestamp. The script does not schedule backups, encrypt archives itself, copy them offsite, or validate the restore.
 
 ```powershell
 .\scripts\backup_postgres.ps1 -BackupDirectory "E:\EncryptedBackups\DelhiStationery"
@@ -47,9 +51,13 @@ Restore media into the configured durable media volume, then verify product imag
 
 ## Go-live acceptance
 
+- Public order lookup is disabled or authorizes one order through an account or private high-entropy token; request attempts are rate-limited.
 - `DJANGO_ENV=production`, `DJANGO_DEBUG=False`, a unique secret, and explicit allowed hosts are set.
 - PostgreSQL and the persistent media volume are available and backed up together.
 - HTTPS redirects and secure cookies work through the configured proxy.
 - HSTS is enabled after HTTPS is confirmed for the production hostname.
 - `check --deploy`, migrations, static collection, and the Django test suite pass in the release pipeline.
 - A database-and-media restore has been rehearsed in a non-production environment.
+- The release owner has rehearsed COD/manual UPI verification, cancellation/refund record-keeping, and manual dispatch procedures.
+
+The code is a strong implementation foundation, but configuration alone does not mean the application is production-ready. Apply Django's [deployment checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/) to the real host and review its [security guidance](https://docs.djangoproject.com/en/5.2/topics/security/) before release.

@@ -1,23 +1,33 @@
-# Delhi Stationery Store
+# Delhi Stationery
 
-A Django storefront for stationery products, customer orders, cart checkout, and store operations. The public site uses Django templates with a session-based cart. Product and order data are stored in SQLite for local development.
+Delhi Stationery is a Django storefront and store-operations application for a local stationery business. Customers can browse products, place direct or cart orders, and follow order updates. Staff use permission-scoped tools to manage the catalogue, inventory, orders, delivery areas, and bulk quotes.
 
-## Current features
+## Project status
 
-- Product catalogue with category filters, SKU/barcode search, pagination, sorting, discount prices, stock, and uploaded images
-- Sample catalogue with local illustrations while there are no active products; active database products replace the sample catalogue automatically
-- Guest direct orders and authenticated cart checkout
-- Customer profiles, order history, order tracking, cancellation, and reorder
-- Permission-scoped staff workspace for product, category, order, customer, bulk request, stock, invoice, and CSV workflows
-- Seven standard staff groups for store managers, catalogue, inventory, orders, bulk requests, and customer support
-- Inventory movement history for sales, cancellations, restocks, opening balances, and reasoned manual adjustments
-- Immutable order status timelines with email updates for checkout and status changes
-- Delivery zone serviceability and fee lookup by six-digit PIN code, with dispatch and tracking details
-- Bulk quote builder with emailed seven-day acceptance links, stock-checked conversion, and linked fulfilment orders
-- Production environment settings for secret keys, PostgreSQL, HTTPS, SMTP, and a persistent media volume
-- Automated Django tests for checkout, stock, cancellation, profiles, and dashboard access, with GitHub Actions CI
+The repository contains ten implemented feature areas and a broader set of storefront and account workflows. It is a substantial portfolio project and a good base for a controlled pilot. It is **not ready for public launch yet**: the public order lookup accepts a phone number and/or sequential order ID without verifying ownership. A phone-only search returns all matching orders; an order ID alone can return one order. Results include personal and delivery details. Replace this with authenticated access or a private, high-entropy per-order tracking link with expiry and rate limiting before exposing real customer orders. A real staging deployment and database-plus-media restore rehearsal are also outstanding.
 
-## Run locally on Windows
+The project has not been deployed to a production host. Payment status is managed by staff; there is no payment gateway or webhook. Delivery is managed by staff; there is no carrier API. Keep checkout on Cash on Delivery or manual UPI verification until a payment integration is implemented and reviewed.
+
+## Feature overview
+
+The ten major feature areas are automated checks and CI, scoped staff permissions, order snapshots, payment-state management, inventory history, order history and email, delivery zones and tracking, bulk quotes, catalogue discovery, and production configuration. Read the [feature inventory](docs/project-feature-inventory.md) for precise scope and limitations, and the [upcoming roadmap](docs/upcoming-feature-roadmap.md) for launch gates and follow-on work.
+
+Other core workflows include a sample catalogue for an empty store, category filters, guest direct orders, authenticated cart checkout, customer profiles, cancellation and reorder, invoices, and CSV exports. Sample products are display-only; they are not database records and cannot be ordered.
+
+## Technology stack
+
+- Python 3.11 in CI; Django 5.2
+- Django templates, HTML, CSS, and JavaScript
+- SQLite for local development; PostgreSQL for staging and production settings
+- Django ORM, sessions, built-in authentication and permissions
+- Pillow for product images; `psycopg` for PostgreSQL; `python-dotenv` for local environment loading
+- Django's test framework and GitHub Actions
+
+React and FastAPI are not used in this repository. If you are learning them, list them separately as learning skills or demonstrate them in a separate project.
+
+## Local setup on Windows
+
+Install Python 3.11 and Git, then run:
 
 ```powershell
 python -m venv .venv
@@ -25,26 +35,42 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py setup_store_roles
 python manage.py runserver 8080
 ```
 
-Open `http://127.0.0.1:8080/`. Local settings use SQLite and Django debug mode. Copy `.env.example` to `.env` if you want to customize development settings; install dependencies from `requirements.txt` first so the settings loader can read it. After migrations, run `python manage.py setup_store_roles` to create the standard groups. Assign users to groups in Django admin; users must also have `is_staff=True` to sign in through the Django admin, while the custom staff workspace is permission-based. The staff workspace is at `/accounts/staff/` and routes each user to their first permitted module.
+Open `http://127.0.0.1:8080/`. Development defaults to SQLite and Django debug mode. Copy `.env.example` to `.env` to adjust local settings. Never use the development secret or Django's `runserver` for a public production site.
 
-## Feature notes
+See the [setup and deployment guide](docs/setup-and-deployment-guide.md) for environment variables, release commands, backups, and go-live checks.
 
-Sample products are in-memory display objects. They are not inserted into the database and cannot be ordered. Once an active database product exists, only real active products are shown. Uploaded product images use Django's media storage.
+## Architecture
 
-Cart checkout currently creates one `Order` row per cart product. Each order keeps the purchased product name, brand, category, SKU, barcode, and unit price; changing catalogue data does not rewrite order history, and products referenced by orders cannot be deleted. UPI payments begin in a pending-verification state; staff can record verified transactions and full or partial refunds. No payment gateway or webhook is connected yet. Stock changes are written to an append-only movement ledger; history starts at the inventory rollout, with existing balances recorded as opening stock. Order status changes create immutable history and send email to the account or optional checkout email. Delivery zones store exact PIN-code serviceability, fee, and ETA; staff add a carrier or tracking reference before dispatch. With no zones configured, checkout remains open with zero delivery fee; after the first zone exists, unlisted or inactive PIN codes are blocked. Bulk requests can be converted into quoted line items; customers accept a time-limited quote and receive linked orders after live stock validation. Email delivery requires a configured mail backend; current send attempts fail silently when mail is unavailable. Automated coverage lives in `store/tests.py` and `accounts/tests.py`, with GitHub Actions CI.
+| Area | Location | Responsibility |
+| --- | --- | --- |
+| Project config | `DelhiStationery/` | Settings, URL routes, WSGI entry point |
+| Store domain | `store/` | Products, orders, payment state, quotes, inventory, delivery rules |
+| Accounts and staff | `accounts/` | Customer profiles, staff permissions, workspace and exports |
+| UI | `templates/`, `static/` | Server-rendered pages, styles and client-side behavior |
+| Operations | `.github/workflows/`, `scripts/`, `docs/` | CI, backup script and project documentation |
 
-Inventory staff can open **Inventory History** from the staff workspace, add stock from low-stock alerts, or make a signed adjustment with a required reason. Catalogue-only staff cannot change stock; new products start at zero unless the user also has the inventory permission.
+## Checks
 
-## Project documentation
+CI runs the Django system check, migration consistency check, and test suite on pushes and pull requests. Run the same checks locally with:
 
-- [Feature gap and roadmap](docs/feature-gap-and-roadmap.md)
-- [Production readiness and backup guide](docs/production-readiness.md)
+```powershell
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+Before a production release, configure the production environment and run `python manage.py check --deploy`. Follow Django's [deployment checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/) as well as this project's [production readiness guide](docs/production-readiness.md).
+
+## Documentation
+
+- [Project feature inventory](docs/project-feature-inventory.md)
+- [Upcoming feature roadmap](docs/upcoming-feature-roadmap.md)
+- [Setup and deployment guide](docs/setup-and-deployment-guide.md)
+- [Feature gap and implementation notes](docs/feature-gap-and-roadmap.md)
+- [Production readiness and backups](docs/production-readiness.md)
 - [Python and Django interview preparation](docs/interview-preparation.md)
-- Existing manuals, setup guides, checklists, and roadmap documents are in `docx/`.
-
-## Production setup
-
-Copy `.env.production.example` to `.env` for a single-server deployment, replace every placeholder, and use a private secret store on managed platforms. Production mode refuses to start with debug enabled or without a secret key, allowed hosts, PostgreSQL settings, and a persistent media path. Follow the [production readiness guide](docs/production-readiness.md) for static collection, HTTPS, SMTP, backup, and restore steps. Run `python manage.py check --deploy` before each release.
+- Existing Word files are in `docx/`; review the Markdown guides above for the current project state.

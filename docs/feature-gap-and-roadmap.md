@@ -1,14 +1,16 @@
 # Delhi Stationery Feature Gap and Roadmap
 
+The ten feature areas from the original roadmap are now implemented in code. The project is a strong interview portfolio and a candidate for a controlled pilot after the launch gates below are closed. It is not ready for public customer traffic today: the phone-only order lookup can expose order details, and the project has not been deployed or recovery-tested on a production-like host.
+
 ## Current project
 
 Delhi Stationery is a Django 5.2 server-rendered store. It includes a public catalogue, product search and category filtering, direct product orders, a session cart, authenticated checkout, customer profiles and order history, phone-based order lookup, bulk enquiries, and a custom dashboard.
 
-The staff workspace uses Django permissions and groups to scope catalogue, inventory, order, bulk-request, and customer-account access. Superusers retain full access; the `setup_store_roles` management command creates the standard staff groups. Store operations include product/category management, order and enquiry status updates, customer history, restocking, invoices, and CSV exports.
+The staff workspace uses Django permissions and groups to scope catalogue, inventory, order, bulk-request, delivery-zone, and customer-account access. Superusers retain full access; the `setup_store_roles` management command creates the standard staff groups. Store operations include product/category management, order and enquiry status updates, customer history, restocking, invoices, and CSV exports.
 
 The sample catalogue is generated in memory and appears only when there are no active products in the database. It is not seed data and does not create orderable database products. The sample product illustrations are now served from the app's static files, so the empty-state catalogue does not depend on Unsplash or another external image host.
 
-## Ten recommended features
+## Ten implemented feature areas
 
 | Priority | Feature | Current gap | Suggested first slice |
 | --- | --- | --- | --- |
@@ -17,15 +19,23 @@ The sample catalogue is generated in memory and appears only when there are no a
 | 3 | Order items and price snapshots | Snapshot implementation complete: order rows preserve product name, brand, category, SKU, barcode and unit price; historical totals use the snapshot and referenced products are protected from deletion. Cart checkout still creates one order row per product rather than grouping a multi-product cart under one parent order. | Add parent-order grouping when receipts or fulfilment need a single order number for an entire cart. |
 | 4 | Payment lifecycle | Implemented manual lifecycle: orders track unpaid/pending/verified/failed/partial-refund/refunded states, transaction and refund references, refund amount, and timestamps; staff updates validate the transitions. No gateway or webhook is connected. | Select a payment provider, then add signed, idempotent webhook processing in the provider's test environment before live payment acceptance. |
 | 5 | Inventory movement history | Implemented: sales, cancellations, restocks, opening balances and signed manual adjustments create immutable records with actor, reason, timestamp and optional order; stock cannot be edited through catalogue forms or the admin list. Existing quantities are seeded as opening balances; older sales cannot be reconstructed. | Add reconciliation reports and a controlled stock-count workflow if the store begins periodic physical counts. |
-| 6 | Order status history and customer notifications | Implemented: immutable status events show on customer tracking, account order history and staff detail pages; customers with an account email or optional checkout email are notified at order placement and each status change. Existing orders receive a current-state baseline event. Email uses Django's configured backend and delivery failures are best-effort. | Configure a real production mail backend and monitor delivery failures; add queued retries if volume requires them. |
+| 6 | Order status history and customer notifications | Implemented: immutable status events show on customer tracking, account order history and staff detail pages; customers with an account email or optional checkout email are notified at order placement and each status change. Existing orders receive a current-state baseline event. Email uses Django's configured backend and delivery failures are best-effort. | Configure a real production mail backend and monitor delivery failures; add queued retries if volume requires them. Public tracking privacy must be fixed before customer data is exposed. |
 | 7 | Delivery zones and tracking | Implemented: staff configure exact six-digit PIN zones, serviceability, fees and ETA; checkout snapshots the fee and PIN; staff must set a carrier or tracking reference before dispatch; customers can see dispatch details. With no zone records, checkout remains open at zero fee; configured zones make unlisted PIN codes unavailable. | Add carrier APIs or delivery provider webhooks after selecting a fulfilment partner. |
 | 8 | Bulk quote to order conversion | Implemented: staff build five-line product quotes with agreed prices, optional customer email, and a seven-day acceptance link. Acceptance rechecks serviceability and stock atomically, creates linked order rows, records inventory and order history, charges delivery once, and sends a conversion email. | Add payment terms, downloadable quote PDFs, or quote revisions if school and office customers need them. |
 | 9 | Product discovery and catalogue operations | Implemented: public catalogue supports pagination, newest/name/price sorting, and search by product name, brand, SKU or barcode. Staff can edit unique codes, search products, and export codes; orders and quotes preserve SKU/barcode snapshots. | Add scan-to-stock receiving, wishlist, reviews or promotions after customer demand is validated. |
 | 10 | Production deployment and operations | Implemented: settings load environment values, require debug off, a secret key, allowed hosts, PostgreSQL and a persistent media path in staging/production; HTTPS/cookie and SMTP settings are configurable. The deployment guide covers migrations, static collection and operations; a PowerShell script backs up PostgreSQL and media to a supplied destination. | Choose hosting, static/media delivery, backup retention, monitoring and restore objectives; rehearse recovery before serving production traffic. |
 
+## Highest-priority remaining work
+
+1. Fix public order lookup. `track_order` can query orders using a phone number alone. Require an authenticated customer or an unguessable, time-limited order token and rate-limit attempts before real customer information is available on the public site.
+2. Deploy to a PostgreSQL staging environment with HTTPS, persistent media, explicit secrets, and real email settings. Run `check --deploy` and the current test suite against the release configuration.
+3. Restore a PostgreSQL and media backup into an isolated environment and record the recovery steps. The script creates archives; it does not verify or schedule restoration.
+4. Rehearse the manual COD / UPI verification and dispatch procedures with store staff.
+5. After a safe pilot, prioritize parent-order grouping and PostgreSQL concurrency coverage before payment-provider and carrier integrations.
+
 ## Suggested delivery order
 
-All ten initial feature slices are implemented in separate feature commits. Production hosting, payment-provider integration, carrier APIs, parent-order grouping, and a rehearsed recovery plan remain operational or follow-on work.
+All ten initial feature slices are implemented in separate feature commits. Production hosting, payment-provider integration, carrier APIs, parent-order grouping, secure public order access, and a rehearsed recovery plan remain operational or follow-on work.
 
 ## Important behavior to retain
 

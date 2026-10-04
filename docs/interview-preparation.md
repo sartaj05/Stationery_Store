@@ -2,11 +2,17 @@
 
 This guide helps a Python developer with two or more years of experience explain the Delhi Stationery project accurately. It covers the architecture, ten delivered feature slices, design trade-offs, likely interview questions, and practice topics. Use the examples as prompts and describe only work you personally completed.
 
+## Stack and experience framing
+
+The repository uses Python 3.11 in CI, Django 5.2, Django templates, HTML, CSS, JavaScript, the Django ORM, SQLite locally, PostgreSQL deployment settings, Django sessions and permissions, Pillow, `psycopg`, `python-dotenv`, Django's test runner, and GitHub Actions. It does not use React or FastAPI. If those are skills you are currently learning, label them as learning or show them through a separate project; do not list them as technologies used in this application.
+
+For a 2.3-year Python/Django profile, anchor answers in specific responsibilities: the models or flows you built, the tests you wrote, the review feedback you handled, and the trade-offs you can explain. Do not present the project as production experience: it has not been deployed to a live host, and no production metrics are available.
+
 ## A 90 second project walkthrough
 
 > I built Delhi Stationery as a server-rendered Django store for a local stationery business. Customers can browse a searchable catalogue, use SKU or barcode lookup, place a direct order, or sign in and check out a session cart. The operations dashboard uses Django permissions and staff groups to separate catalogue, inventory, order, bulk-request, and customer-account work. Checkout updates stock inside a transaction, and the store records immutable inventory movements and order-status history. Order rows keep product, price, delivery, SKU, and barcode snapshots so later catalogue edits do not change historical records. Staff can prepare a bulk quote, send a seven-day acceptance link, and convert it into linked orders after stock and delivery checks. The project has a Django regression suite and a GitHub Actions workflow. Local development uses SQLite; staging and production settings require PostgreSQL, environment secrets, HTTPS settings, and a durable media path.
 
-The repository has 45 Django tests at the time of this guide. The application has not been deployed to a production host, and it does not connect to a payment gateway or a carrier API.
+The repository had 45 Django tests at its last recorded verification. Recheck that count after future changes. The application has not been deployed to a production host, and it does not connect to a payment gateway or a carrier API. The public order lookup accepts a phone number and/or sequential order ID without verifying ownership and displays personal and delivery details. Treat this as a privacy defect, fix it before a pilot, and discuss the mitigation honestly if asked.
 
 ## Project architecture
 
@@ -27,6 +33,7 @@ The empty-state sample catalogue is built in memory. It does not create fake pro
 | --- | --- | --- |
 | Automated tests and CI | Django tests cover storefront, checkout, permissions and the ten feature slices. GitHub Actions runs checks, migration consistency and tests. | How to isolate behavior in tests and keep schema changes visible in CI. |
 | Staff roles | Django permissions and groups scope catalogue, inventory, orders, bulk requests, delivery zones and customer accounts. `setup_store_roles` creates the standard groups. | Why authorization belongs on the server as well as in templates. |
+| Order access privacy | Account history is scoped to the logged-in customer, but public tracking accepts a phone number and/or sequential order ID without proving ownership and can reveal personal/delivery details. | How to distinguish a lookup identifier from an authentication factor; propose account ownership or a high-entropy per-order token, expiry, rate limiting, and minimal disclosure. |
 | Order snapshots | Each order row preserves product name, brand, category, SKU, barcode and unit price. Referenced products cannot be deleted. | How a historical record differs from a live catalogue relationship. |
 | Payment lifecycle | Staff can record pending, verified, failed and refund states with references and timestamps. | The difference between recording a payment choice and integrating a provider. |
 | Inventory ledger | Sales, allowed cancellations, restocks, opening balances and adjustments create immutable movements with actor and reason. | How to reconcile a stock balance with an append-only movement history. |
